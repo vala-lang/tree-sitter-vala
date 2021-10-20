@@ -1,0 +1,28 @@
+==========
+Namespaces
+==========
+
+namespace Foo {
+}
+
+namespace Foo.Bar {
+}
+
+namespace global::Foo.Bar {
+}
+
+namespace Foo {
+    namespace Bar {
+    }
+}
+
+---
+
+(source_file
+  (namespace_member (namespace_declaration (symbol (symbol_part (identifier)))))
+  (namespace_member (namespace_declaration (symbol (symbol_part (identifier)) (symbol_part (identifier)))))
+  (namespace_member (namespace_declaration (symbol (symbol_part (identifier)) (symbol_part (identifier)))))
+  (namespace_member
+    (namespace_declaration (symbol (symbol_part (identifier)))
+      (namespace_member
+        (namespace_declaration (symbol (symbol_part (identifier))))))))
