@@ -28,7 +28,8 @@ module.exports = grammar({
     namespace_member: $ => seq(
       repeat($.attribute),
       choice(
-        $.namespace_declaration
+        $.namespace_declaration,
+        $.field_declaration
       )
     ),
 
@@ -187,6 +188,22 @@ module.exports = grammar({
       )
     ),
 
+    type_weak: $ => prec.left(
+      choice(
+        seq('void', repeat('*')),
+        seq(
+          optional('dynamic'),
+          optional('unowned'),
+          optional('weak'),
+          $.symbol,
+          optional($.type_arguments),
+          optional('*'),
+          optional('?'),
+          repeat($.array_type)
+        )
+      )
+    ),
+
     type_arguments: $ => seq(
       '<',
       $.type,
@@ -194,10 +211,10 @@ module.exports = grammar({
       '>'
     ),
 
-    array_type: $ => prec.left(
+    array_type: $ => prec.right(
       seq(
         '[',
-        $.array_size,
+        optional($.array_size),
         ']',
         optional('?')
       )
@@ -453,6 +470,25 @@ module.exports = grammar({
       optional($.type_arguments)
     ),
 
+    member_declaration_modifier: $ => choice(
+      'async',
+      'class',
+      'extern',
+      'inline',
+      'static',
+      'abstract',
+      'virtual',
+      'override',
+      'new'
+    ),
+
+    access_modifier: $ => choice(
+      'private',
+      'protected',
+      'internal',
+      'public'
+    ),
+
     namespace_declaration: $ => seq(
       'namespace',
       $.symbol,
@@ -460,6 +496,15 @@ module.exports = grammar({
       repeat($.using_directive),
       repeat($.namespace_member),
       '}'
+    ),
+
+    field_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.member_declaration_modifier),
+      $.type_weak,
+      $.identifier,
+      optional(seq('=', $.expression)),
+      ';'
     )
   }
 });
