@@ -11,19 +11,9 @@ module.exports = grammar({
       ';'
     ),
 
-    symbol: $ => prec.left(
-      seq(
-        $.symbol_part,
-        repeat(seq('.', $.symbol_part))
-      )
-    ),
+    symbol: $ => seq(optional('global::'), $.identifier, repeat(seq('.', $.identifier))),
 
-    symbol_part: $ => choice(
-      seq('global::', $.identifier),
-      $.identifier
-    ),
-
-    identifier: $ => /[A-z]\w*/,
+    identifier: $ => /[A-Za-z_]\w*/,
 
     namespace_member: $ => seq(
       repeat($.attribute),
@@ -46,134 +36,49 @@ module.exports = grammar({
       $.expression
     ),
 
-    expression: $ => prec.left(
-      choice(
-        // $.lambda_expression,
-        seq(
-          $.conditional_expression,
-          optional(
-            seq(
-              $.assignment_operator,
-              $.expression
-            )
-          )
-        )
-      )
+    expression: $ => choice(
+        $.assignment_expression,
+        $.arithmetic_expression,
+        $.literal,
+        $.multiplicative_expression,
+        $.symbol
     ),
 
     assignment_operator: $ => choice('=', '+=', '-=', '|=', '&=', '^=', '/=', '*=', '%=', '<<=', '>>='),
+    assignment_expression: $ => prec.left(0, seq($.expression, $.assignment_operator, $.expression)),
 
-    conditional_expression: $ => prec.right(
-      seq(
-        $.coalescing_expression,
-        optional(
-          seq(
-            '?',
-            $.expression,
-            ':',
-            $.expression
-          )
-        )
-      )
+    arithmetic_expression: $ => prec.left(0, seq($.expression, choice('+', '-'), $.expression)),
+    multiplicative_expression: $ => prec.left(1, seq($.expression, choice('*', '/'), $.expression)),
+
+    character: $ => /'\S'/,
+    integer: $ => /[1-9]\d*|0[0-7]*/,
+    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?/,
+    regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
+    string: $ => /".*"/,
+    template_string: $ => seq(
+      /@"[^\n]*/,
+      repeat(seq(
+        optional(seq('$(', $.expression, ')')),
+        /[^\n]*/
+      )),
+      '"'
+    ),
+    verbatim_string: $=> /"""(.|\n)*"""/,
+
+    literal: $ => choice(
+        'true',
+        'false',
+        'null',
+        $.character,
+        $.integer,
+        $.real,
+        $.regex,
+        $.string,
+        $.template_string,
+        $.verbatim_string
     ),
 
-    coalescing_expression: $ => prec.right(
-      seq(
-        $.conditional_or_expression,
-        optional(seq(
-          '??',
-          $.coalescing_expression
-        ))
-      )
-    ),
-
-    conditional_or_expression: $ => prec.left(
-      seq(
-        $.conditional_and_expression,
-        optional(
-          seq(
-            '||',
-            $.conditional_and_expression
-          )
-        )
-      )
-    ),
-
-    conditional_and_expression: $ => prec.left(
-      seq(
-        $.in_expression,
-        optional(seq(
-          '&&',
-          $.in_expression
-        ))
-      )
-    ),
-
-    in_expression: $ => prec.right(
-      seq(
-        $.inclusive_or_expression,
-        optional(seq(
-          'in',
-          $.inclusive_or_expression
-        ))
-      )
-    ),
-
-    inclusive_or_expression: $ => prec.left(
-      seq(
-        $.exclusive_or_expression,
-        optional(seq(
-          '|',
-          $.exclusive_or_expression
-        ))
-      )
-    ),
-
-    exclusive_or_expression: $ => prec.left(
-      seq(
-        $.and_expression,
-        optional(seq(
-          '^',
-          $.and_expression
-        ))
-      )
-    ),
-
-    and_expression: $ => prec.left(
-      seq(
-        $.equality_expression,
-        optional(seq(
-          '&',
-          $.equality_expression
-        ))
-      )
-    ),
-
-    equality_expression: $ => prec.left(
-      seq(
-        $.relational_expression,
-        repeat(seq(
-          choice('==', '!='),
-          $.relational_expression
-        ))
-      )
-    ),
-
-    relational_expression: $ => prec.left(
-      seq(
-        $.shift_expression,
-        repeat(choice(
-          seq(
-            choice('<', '<=', '>', '>='),
-            $.shift_expression
-          ),
-          seq('is', $.type),
-          seq('as', $.type)
-        ))
-      )
-    ),
-
-    type: $ => prec.left(
+    type: $ =>
       choice(
         seq('void', repeat('*')),
         seq(
@@ -185,10 +90,9 @@ module.exports = grammar({
           optional('?'),
           repeat($.array_type)
         )
-      )
-    ),
+      ),
 
-    type_weak: $ => prec.left(
+    type_weak: $ =>
       choice(
         seq('void', repeat('*')),
         seq(
@@ -201,8 +105,7 @@ module.exports = grammar({
           optional('?'),
           repeat($.array_type)
         )
-      )
-    ),
+      ),
 
     type_arguments: $ => seq(
       '<',
@@ -211,263 +114,17 @@ module.exports = grammar({
       '>'
     ),
 
-    array_type: $ => prec.right(
+    array_type: $ =>
       seq(
         '[',
         optional($.array_size),
         ']',
         optional('?')
-      )
-    ),
-
-    shift_expression: $ => prec.left(
-      seq(
-        $.additive_expression,
-        repeat(seq(
-          choice('<<', '>>'),
-          $.additive_expression
-        ))
-      )
-    ),
-
-    additive_expression: $ => prec.left(
-      seq(
-        $.multiplicative_expression,
-        repeat(seq(
-          choice('+', '-'),
-          $.multiplicative_expression
-        ))
-      )
-    ),
-
-    multiplicative_expression: $ => prec.left(
-      seq(
-        $.unary_expression,
-        repeat(seq(
-          choice('*', '/', '%'),
-          $.unary_expression
-        ))
-      )
-    ),
-
-    unary_expression: $ => prec.right(
-      choice(
-        seq($.unary_operator, $.unary_expression),
-        seq('(', choice('owned', 'void', 'dynamic', '!', 'type'), ')', $.unary_expression),
-        $.primary_expression
-      )
-    ),
-
-    unary_operator: $ => choice( '+', '-', '!', '~', '++', '--', '*', '&', '(owned)', '(void)', '(dynamic)', '(!)'),
-
-    primary_expression: $ => prec.left(
-      seq(
-        choice(
-          $.literal,
-          $.initializer,
-          $.tuple,
-          // $.open_regex_literal,
-          $.this_access,
-          $.base_access,
-          $.object_or_array_creation_expression,
-          $.yield_expression,
-          $.sizeof_expression,
-          $.simple_name
-        ),
-        repeat(
-          choice(
-            $.member_access,
-            $.pointer_member_access,
-            $.method_call,
-            $.element_access,
-            $.post_increment_expression,
-            $.post_decrement_expression
-          )
-        )
-      )
-    ),
-
-    literal: $ => choice(
-      'true',
-      'false',
-      'null',
-      $.integer_literal,
-      $.real_literal,
-      $.character_literal,
-      $.regex_literal,
-      $.string_literal,
-      $.template_string_literal,
-      $.verbatim_string_literal
-    ),
-
-    integer_literal: $ => /[1-9]\d*|0[0-7]*/,
-
-    real_literal: $ => /\d+(\.\d+)?([eE][+-]?\d+)?/,
-
-    character_literal: $ => /'\S'/,
-
-    regex_literal: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
-
-    string_literal: $ => /".*"/,
-
-    template_string_literal: $ => seq(
-      /@"[^\n]*/,
-      repeat(seq(
-        optional(seq('$(', $.expression, ')')),
-        /[^\n]*/
-      )),
-      '"'
-    ),
-
-    verbatim_string_literal: $ => /"""(.|\n)*"""/,
-
-    initializer: $ => seq(
-      '{',
-      $.argument,
-      repeat(seq(',', $.argument)),
-      '}'
-    ),
-
-    argument: $ => prec.left(1,
-      choice(
-        seq('ref', $.expression),
-        seq('out', $.expression),
-        $.expression,
-        seq(
-          $.identifier,
-          optional(seq(':', $.expression))
-        )
-      )
-    ),
-
-    tuple: $ => seq(
-      '(',
-      $.expression,
-      repeat(seq(',', $.expression)),
-      ')'
-    ),
-
-    this_access: $ => 'this',
-
-    base_access: $ => 'base',
-
-    object_or_array_creation_expression: $ => seq(
-      'new',
-      $.member,
-      choice(
-        $.object_creation_expression,
-        $.array_creation_expression
-      )
-    ),
-
-    object_creation_expression: $ => seq(
-      '(',
-      optional(seq(
-        $.argument,
-        repeat(seq(
-          ',',
-          $.argument
-        ))
-      )),
-      ')',
-      optional($.object_initializer)
-    ),
-
-    object_initializer: $ => seq(
-      '{',
-      $.member_initializer,
-      repeat(seq(',', $.member_initializer)),
-      '}'
-    ),
-
-    member_initializer: $ => seq(
-      $.identifier,
-      '=',
-      $.expression
-    ),
-
-    array_creation_expression: $ => seq(
-      repeat(seq('[', ']')),
-      optional(seq('[', $.array_size, ']')),
-      $.initializer
-    ),
+      ),
 
     array_size: $ => seq(
       $.expression,
       repeat(seq(',', $.expression))
-    ),
-
-    yield_expression: $ => seq(
-      'yield',
-      optional(seq($.base_access, '.')),
-      $.member,
-      $.method_call
-    ),
-
-    method_call: $ => seq(
-      '(',
-      optional(seq($.argument, repeat(seq(',', $.argument)))),
-      ')',
-      optional($.object_initializer)
-    ),
-
-    sizeof_expression: $ => seq(
-      'sizeof',
-      '(',
-      $.type,
-      ')'
-    ),
-
-    typeof_expression: $ => seq(
-      'typeof',
-      '(',
-      $.type,
-      ')'
-    ),
-
-    simple_name: $ => prec.left(2,
-      seq(
-        choice(
-          seq('global::', $.identifier),
-          $.identifier
-        ),
-        optional($.type_arguments)
-      )
-    ),
-
-    member_access: $ => prec.left(
-      seq(
-        '.',
-        $.identifier,
-        optional($.type_arguments)
-      )
-    ),
-
-    pointer_member_access: $ => prec.left(
-      seq(
-        '->',
-        $.identifier,
-        optional($.type_arguments)
-      )
-    ),
-
-    element_access: $=> prec.right(
-      seq(
-        '[',
-        choice(
-          ':',
-          seq($.expression, repeat(seq(',', $.expression)))
-        )
-      )
-    ),
-
-    post_increment_expression: $ => '++',
-
-    post_decrement_expression: $ => '--',
-
-    member: $ => seq(
-      $.identifier,
-      optional($.type_arguments)
     ),
 
     member_declaration_modifier: $ => choice(
