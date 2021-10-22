@@ -254,7 +254,7 @@ module.exports = grammar({
       $.identifier,
       optional($.type_arguments),
       '(',
-      repeat($.parameter),
+      optional(seq($.parameter, repeat(seq(',', $.parameter)))),
       ')',
       optional(seq('throws', $.type)),
       optional(seq(choice('requires', 'ensures'), '(', $._expression, ')')),
