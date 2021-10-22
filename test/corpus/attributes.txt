@@ -14,9 +14,9 @@ namespace Attributes {
     (attribute (identifier)
       (attribute_argument
         (identifier)
-        (expression (literal (string))))
+        (literal (string)))
       (attribute_argument
         (identifier)
-        (expression (literal))))
+        (literal (boolean))))
     (namespace_declaration
       (symbol (identifier)))))

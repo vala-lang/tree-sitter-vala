@@ -1,0 +1,27 @@
+===========
+Expressions
+===========
+
+void main() {
+    3 + b.c;
+    a in b();
+    3 = 3;
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type_weak)
+      (identifier)
+      (block
+        (arithmetic_expression
+          (literal (integer))
+          (member_access_expression (identifier) (identifier)))
+        (in_expression 
+          (member_access_expression (identifier))
+          (method_call_expression (member_access_expression (identifier))))
+        (assignment_expression
+          (literal (integer))
+          (literal (integer)))))))
