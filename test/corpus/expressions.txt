@@ -14,11 +14,11 @@ void main() {
   (namespace_member
     (method_declaration
       (type)
-      (identifier)
+      (symbol (identifier))
       (block
         (arithmetic_expression
           (literal (integer))
-          (member_access_expression (identifier) (identifier)))
+          (member_access_expression (member_access_expression (identifier)) (identifier)))
         (in_expression 
           (member_access_expression (identifier))
           (method_call_expression (member_access_expression (identifier))))

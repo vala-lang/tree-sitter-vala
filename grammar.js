@@ -1,6 +1,8 @@
 module.exports = grammar({
   name: 'vala',
 
+  word: $ => $.identifier,
+
   rules: {
     source_file: $ => seq(repeat($.using_directive), repeat($.namespace_member)),
 
@@ -24,12 +26,13 @@ module.exports = grammar({
 
     symbol: $ => seq(optional('global::'), $.identifier, repeat(seq('.', $.identifier))),
 
-    identifier: $ => /[A-Za-z_]\w*/,
+    identifier: $ => /@?[A-Za-z_]\w*/,
 
     namespace_member: $ => seq(
       repeat($.attribute),
       choice(
         $.namespace_declaration,
+        $.class_declaration,
         $.method_declaration,
         $.field_declaration
       )
@@ -75,20 +78,29 @@ module.exports = grammar({
         $.ternary_expression,
         $.assignment_expression,
         // --- expressions that do not have a precedence
-        $.object_creation_expression
+        $.object_creation_expression,
+        $.this_access
     ),
 
     member_access_expression: $ => prec.right(15,
       seq(
         optional(seq(
           choice(
-            $.identifier,
+            $.this_access,
+            $.member_access_expression,
             seq('(', $._expression, ')')
           ),
           choice('.', '?.', '->'),
         )),
         $.identifier
       ),
+    ),
+
+    argument: $ => choice(
+      seq('ref', $._expression),
+      seq('out', $._expression),
+      $._expression,
+      seq($.identifier, ':', $._expression)
     ),
 
     method_call_expression: $ => prec.right(15,
@@ -98,14 +110,14 @@ module.exports = grammar({
           seq($.member_access_expression, optional($.type_arguments))
         ),
         '(',
-        optional(seq($._expression, repeat(seq(',', $._expression)))),
+        optional(seq($.argument, repeat(seq(',', $.argument)))),
         ')'
       )
     ),
 
     postfix_expression: $ => prec.left(14, seq($._expression, choice('++', '--'))),
-    static_cast_expression: $ => prec.right(13, seq(seq('(', $.type, ')'), $._expression)),
-    typeof_expression: $ => prec.right(13, seq('typeof', '(', $._expression, ')')),
+    static_cast_expression: $ => prec.right(13, seq(seq('(', choice($.type, '!'), ')'), $._expression)),
+    typeof_expression: $ => prec.right(13, seq('typeof', '(', $.type, ')')),
     sizeof_expression: $ => prec.right(13, seq('sizeof', '(', $.type, ')')),
     unary_expression: $ => prec.right(13, seq(choice('!', '~', '++', '--', '-', '*', '&'), $._expression)),
     multiplicative_expression: $ => prec.left(12, seq($._expression, choice('*', '/', '%'), $._expression)),
@@ -127,6 +139,8 @@ module.exports = grammar({
     _assignment_operator: $ => choice('=', '+=', '-=', '|=', '&=', '^=', '/=', '*=', '%=', '<<=', '>>='),
     assignment_expression: $ => prec.right(0, seq($._expression, $._assignment_operator, $._expression)),
 
+    this_access: $ => 'this',
+
     oce_type: $ => seq(
       $.symbol,
       optional($.type_arguments),
@@ -136,7 +150,7 @@ module.exports = grammar({
       'new',
       $.oce_type,
       '(',
-      optional(seq($._expression, repeat(seq(',', $._expression)))),
+      optional(seq($.argument, repeat(seq(',', $.argument)))),
       ')'
     ),
 
@@ -244,17 +258,58 @@ module.exports = grammar({
       '}'
     ),
 
+    type_declaration_modifier: $ => choice(
+      'abstract',
+      'extern',
+      'static'
+    ),
+
+    class_declaration: $ => seq(
+      optional($.access_modifier),
+      optional(seq($.type_declaration_modifier, repeat(seq(',', $.type_declaration_modifier)))),
+      'class',
+      $.type,
+      optional(seq(':', $.type, repeat(seq(',', $.type)))),
+      '{',
+      repeat($.class_member),
+      '}'
+    ),
+
+    class_member: $ => seq(
+      repeat($.attribute),
+      choice(
+        $.class_declaration,
+        $.method_declaration,
+        $.creation_method_declaration,
+        $.field_declaration,
+        $.property_declaration
+      ),
+    ),
+
     parameter: $ => seq(
+      optional(choice('out', 'ref')),
       $.type,
       $.identifier,
       optional(seq('=', $._expression))
     ),
 
+    creation_method_declaration: $ => seq(
+      optional($.access_modifier),
+      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      $.symbol,
+      '(',
+      optional(seq($.parameter, repeat(seq(',', $.parameter)))),
+      ')',
+      optional(seq('throws', $.type)),
+      optional(seq(choice('requires', 'ensures'), '(', $._expression, ')')),
+      choice($.block, ';')
+    ),
+
     method_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
       $.type,
-      $.identifier,
+      $.symbol,
       optional($.type_arguments),
       '(',
       optional(seq($.parameter, repeat(seq(',', $.parameter)))),
@@ -266,11 +321,28 @@ module.exports = grammar({
 
     field_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
       $.type,
       $.identifier,
       optional(seq('=', $._expression)),
       ';'
+    ),
+    
+    property_declaration: $ => seq(
+      optional($.access_modifier),
+      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      $.type,
+      $.symbol,
+      '{',
+      repeat(choice(seq('default', '=', $._expression), $.property_accessor)),
+      '}'
+    ),
+
+    property_accessor: $ => seq(
+      repeat($.attribute),
+      optional($.access_modifier),
+      choice('get', seq('set', optional('construct')), seq('construct', 'set')),
+      choice(';', $.block)
     ),
 
     local_declaration: $ => seq(
@@ -286,13 +358,45 @@ module.exports = grammar({
       $.block,
       ';',
       seq($._expression, ';'),
-      $.local_declaration
-      // TODO - for, while, if, foreach
+      $.local_declaration,
+      $.return_statement,
+      $.if_statement
+      // TODO - for, while, foreach, return, try
+    ),
+
+    return_statement: $ => seq('return', $._expression, ';'),
+
+    if_statement: $ => seq(
+      'if', '(', $._expression, ')',
+      choice(
+        seq($._expression, ';'),
+        $.block
+      ),
+      repeat($.elseif_statement),
+      optional($.else_statement)
+    ),
+
+    elseif_statement: $ => seq(
+      'else', 'if', '(', $._expression, ')',
+      choice(
+        seq($._expression, ';'),
+        $.block
+      )
+    ),
+
+    else_statement: $ => seq(
+      'else',
+      choice(
+        seq($._expression, ';'),
+        $.block
+      )
     )
   },
 
   conflicts: $ => [
-    [$.type, $._expression],       // for static_cast_expression
+    [$.type, $._expression],                                            // for static_cast_expression
+    [$.member_declaration_modifier, $.class_declaration],               // because both can start with 'class'
+    [$.member_declaration_modifier, $.type_declaration_modifier]        // because both share 'extern'
   ],
 
   extras: $ => [
