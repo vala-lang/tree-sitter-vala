@@ -4,6 +4,17 @@ module.exports = grammar({
   rules: {
     source_file: $ => seq(repeat($.using_directive), repeat($.namespace_member)),
 
+    // taken from tree-sitter-c
+    // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
+    comment: $ => token(choice(
+      seq('//', /(\\(.|\r?\n)|[^\\\n])*/),
+      seq(
+        '/*',
+        /[^*]*\*+([^/*][^*]*\*+)*/,
+        '/'
+      )
+    )),
+
     using_directive: $ => seq(
       'using',
       $.symbol,
@@ -62,7 +73,9 @@ module.exports = grammar({
         $.logical_or_expression,
         $.null_coalescing_expression,
         $.ternary_expression,
-        $.assignment_expression
+        $.assignment_expression,
+        // --- expressions that do not have a precedence
+        $.object_creation_expression
     ),
 
     member_access_expression: $ => prec.right(15,
@@ -91,7 +104,7 @@ module.exports = grammar({
     ),
 
     postfix_expression: $ => prec.left(14, seq($._expression, choice('++', '--'))),
-    static_cast_expression: $ => prec.right(13, seq(seq('(', $.type_weak, ')'), $._expression)),
+    static_cast_expression: $ => prec.right(13, seq(seq('(', $.type, ')'), $._expression)),
     typeof_expression: $ => prec.right(13, seq('typeof', '(', $._expression, ')')),
     sizeof_expression: $ => prec.right(13, seq('sizeof', '(', $.type, ')')),
     unary_expression: $ => prec.right(13, seq(choice('!', '~', '++', '--', '-', '*', '&'), $._expression)),
@@ -114,20 +127,34 @@ module.exports = grammar({
     _assignment_operator: $ => choice('=', '+=', '-=', '|=', '&=', '^=', '/=', '*=', '%=', '<<=', '>>='),
     assignment_expression: $ => prec.right(0, seq($._expression, $._assignment_operator, $._expression)),
 
+    oce_type: $ => seq(
+      $.symbol,
+      optional($.type_arguments),
+    ),
+
+    object_creation_expression: $ => seq(
+      'new',
+      $.oce_type,
+      '(',
+      optional(seq($._expression, repeat(seq(',', $._expression)))),
+      ')'
+    ),
+
     boolean: $ => choice('true', 'false'),
     character: $ => /'\S'/,
     integer: $ => choice(/[1-9]\d*|0[0-7]*/, /0[xX][A-Fa-f0-9]+/),
     null: $ => 'null',
     real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?/,
     regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
-    string: $ => /".*"/,
+    string: $ => /"([^"]+|\\")*"/,
     template_string: $ => seq(
-      /@"[^\n]*/,
-      repeat(seq(
-        optional(seq('$(', $._expression, ')')),
-        /[^\n]*/
-      )),
+      '@"',
+      repeat(choice(/([^$"]+|\\")+/, $.template_string_expression)),
       '"'
+    ),
+    template_string_expression: $ => choice(
+      seq('$(', $._expression, ')'),
+      seq('$', $.identifier)
     ),
     verbatim_string: $=> /"""(.|\n)*"""/,
 
@@ -143,39 +170,15 @@ module.exports = grammar({
         $.verbatim_string
     ),
 
-    // TODO: remove this?
     type: $ => prec.right(
       choice(
         seq('void', repeat('*')),
         seq(
           optional('dynamic'),
-          optional('weak'),
-          '(',
-          $.type_weak,
-          ')',
-          repeat1($.array_type)
-        ),
-        seq(
-          optional('dynamic'),
-          optional('unowned'),
-          $.symbol,
-          optional($.type_arguments),
-          optional('*'),
-          optional('?'),
-          repeat($.array_type)
-        )
-      )
-    ),
-
-    type_weak: $ => prec.right(
-      choice(
-        seq('void', repeat('*')),
-        seq(
-          optional('dynamic'),
           optional('unowned'),
           optional('weak'),
           '(',
-          $.type_weak,
+          $.type,
           ')',
           repeat1($.array_type)
         ),
@@ -242,7 +245,7 @@ module.exports = grammar({
     ),
 
     parameter: $ => seq(
-      $.type_weak,
+      $.type,
       $.identifier,
       optional(seq('=', $._expression))
     ),
@@ -250,7 +253,7 @@ module.exports = grammar({
     method_declaration: $ => seq(
       optional($.access_modifier),
       repeat($.member_declaration_modifier),
-      $.type_weak,
+      $.type,
       $.identifier,
       optional($.type_arguments),
       '(',
@@ -264,10 +267,17 @@ module.exports = grammar({
     field_declaration: $ => seq(
       optional($.access_modifier),
       repeat($.member_declaration_modifier),
-      $.type_weak,
+      $.type,
       $.identifier,
       optional(seq('=', $._expression)),
       ';'
+    ),
+
+    local_declaration: $ => seq(
+        $.type,
+        $.identifier,
+        optional(seq('=', $._expression)),
+        ';'
     ),
 
     block: $ => seq('{', repeat($._statement), '}'),
@@ -276,12 +286,17 @@ module.exports = grammar({
       $.block,
       ';',
       seq($._expression, ';'),
-      // TODO
+      $.local_declaration
+      // TODO - for, while, if, foreach
     )
   },
 
   conflicts: $ => [
-    [$.type, $.type_weak, $._expression],       // for static_cast_expression
-    [$._expression, $.type_weak],               // for static_cast_expression
-  ]
+    [$.type, $._expression],       // for static_cast_expression
+  ],
+
+  extras: $ => [
+    /\s|\\\r?\n/,
+    $.comment,
+  ],
 });

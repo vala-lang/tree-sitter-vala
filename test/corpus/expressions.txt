@@ -13,7 +13,7 @@ void main() {
 (source_file
   (namespace_member
     (method_declaration
-      (type_weak)
+      (type)
       (identifier)
       (block
         (arithmetic_expression

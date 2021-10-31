@@ -19,5 +19,15 @@
   "bugs": {
     "url": "https://github.com/Prince781/tree-sitter-vala/issues"
   },
-  "homepage": "https://github.com/Prince781/tree-sitter-vala#readme"
+  "homepage": "https://github.com/Prince781/tree-sitter-vala#readme",
+  "tree-sitter": [
+    {
+      "scope": "source.vala",
+      "file-types": [
+        "vala",
+        "vapi"
+      ],
+      "first-line-regex": "#!.*\\bvala$"
+    }
+  ]
 }
