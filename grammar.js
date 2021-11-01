@@ -24,7 +24,10 @@ module.exports = grammar({
       ';'
     ),
 
-    symbol: $ => seq(optional('global::'), $.identifier, repeat(seq('.', $.identifier))),
+    symbol: $ => choice(
+      seq($.symbol, '.', $.identifier),
+      seq(optional('global::'), $.identifier)
+    ),
 
     identifier: $ => /@?[A-Za-z_]\w*/,
 
@@ -59,6 +62,7 @@ module.exports = grammar({
     _expression: $ => choice(
         $.literal,
         seq('(', $._expression, ')'),
+        $.array_creation_expression,
         $.object_creation_expression,
         $.this_access,
         $.base_access,
@@ -169,6 +173,13 @@ module.exports = grammar({
     this_access: $ => 'this',
 
     base_access: $ => 'base',
+
+    array_creation_expression: $ => seq(
+      'new',
+      $.type,
+      $.inline_array_type,
+      $.initializer
+    ),
 
     object_creation_expression: $ => seq(
       'new',
@@ -458,7 +469,7 @@ module.exports = grammar({
       ';'
     ),
 
-    inline_array_type: $ => seq('[', $.integer, ']'),
+    inline_array_type: $ => seq('[', optional($.integer), ']'),
     
     property_declaration: $ => seq(
       optional($.access_modifier),
@@ -473,7 +484,11 @@ module.exports = grammar({
     property_accessor: $ => seq(
       repeat($.attribute),
       optional($.access_modifier),
-      choice('get', seq('set', optional('construct')), seq('construct', 'set')),
+      choice(
+        seq(optional('owned'), 'get'),
+        seq('set', optional('construct')),
+        seq('construct', 'set')
+      ),
       choice(';', $.block)
     ),
 
@@ -631,6 +646,10 @@ module.exports = grammar({
     [$.member_declaration_modifier, $.class_declaration],               // because both can start with 'class'
     [$.member_declaration_modifier, $.type_declaration_modifier],       // because both share 'extern'
     [$.member_declaration_modifier, $.object_creation_expression],      // because OCEs can appear in the main block
+    [$.array_creation_expression, $.member_declaration_modifier],       // because both can start with 'new ('
+    [$.array_creation_expression,
+     $.object_creation_expression,
+     $.member_declaration_modifier],                                    // because these all start with 'new'
     [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'

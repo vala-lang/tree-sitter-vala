@@ -20,8 +20,8 @@ namespace Foo {
 
 (source_file
   (namespace_member (namespace_declaration (symbol (identifier))))
-  (namespace_member (namespace_declaration (symbol (identifier) (identifier))))
-  (namespace_member (namespace_declaration (symbol (identifier) (identifier))))
+  (namespace_member (namespace_declaration (symbol (symbol (identifier)) (identifier))))
+  (namespace_member (namespace_declaration (symbol (symbol (identifier)) (identifier))))
   (namespace_member
     (namespace_declaration (symbol (identifier))
       (namespace_member

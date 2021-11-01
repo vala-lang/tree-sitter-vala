@@ -4,7 +4,9 @@
 (type) @type
 (unqualified_type) @type
 (attribute) @attribute
+(method_declaration (symbol (symbol) @type (identifier) @function))
 (method_declaration (symbol (identifier) @function))
+(creation_method_declaration (symbol (symbol) @type (identifier) @constructor))
 (creation_method_declaration (symbol (identifier) @constructor))
 (enum_declaration (symbol) @type)
 (enum_value (identifier) @constant)
@@ -65,6 +67,7 @@
  "not"
  "out"
  "override"
+ "owned"
  "private"
  "protected"
  "public"

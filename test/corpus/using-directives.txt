@@ -13,9 +13,9 @@ using A, B;
  (using_directive
   (symbol (identifier)))
  (using_directive
-  (symbol (identifier) (identifier)))
+  (symbol (symbol (identifier)) (identifier)))
  (using_directive
-  (symbol (identifier) (identifier)))
+  (symbol (symbol (identifier)) (identifier)))
  (using_directive
   (symbol (identifier))
   (symbol (identifier))))
