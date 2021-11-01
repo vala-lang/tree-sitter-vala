@@ -65,6 +65,7 @@
  "try"
  "typeof"
  "unowned"
+ "using"
  "virtual"
  "weak"
  "while"
