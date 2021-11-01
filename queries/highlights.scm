@@ -21,6 +21,10 @@
 (template_string) @string
 (template_string_expression) @string.special
 (verbatim_string) @string
+[
+ "var"
+ "void"
+] @type.builtin
 
 [
  "abstract"

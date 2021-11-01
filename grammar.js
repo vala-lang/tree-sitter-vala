@@ -210,6 +210,7 @@ module.exports = grammar({
     ),
 
     type: $ => choice(
+      'var',
       seq('void', repeat('*')),
       seq(
         optional('dynamic'),
@@ -469,7 +470,10 @@ module.exports = grammar({
     for_statement: $ => seq(
       'for',
       '(',
-      $.local_declaration,
+      choice(
+        $.local_declaration,
+        seq($._expression, ';')
+      ),
       $._expression,
       ';',
       $._expression,
