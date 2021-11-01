@@ -29,10 +29,13 @@
  "class"
  "const"
  "construct"
+ "do"
  "dynamic"
  "else"
  "extern"
  "finally"
+ "for"
+ "foreach"
  "get"
  "if"
  "in"
@@ -51,6 +54,7 @@
  "unowned"
  "virtual"
  "weak"
+ "while"
 ] @keyword
 
 [

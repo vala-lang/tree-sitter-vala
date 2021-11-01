@@ -370,41 +370,40 @@ module.exports = grammar({
     block: $ => seq('{', repeat(choice($._statement, $.local_declaration)), '}'),
 
     _statement: $ => choice(
+      $.if_statement,
+      $._statement_without_if
+    ),
+
+    // resolves ambiguities with 'else if'
+    _statement_without_if: $ => choice(
       $.block,
       ';',
       seq($._expression, ';'),
       $.return_statement,
-      $.if_statement,
-      $.try_statement
-      // TODO - for, while, foreach, return
+      $.try_statement,
+      $.while_statement,
+      $.do_statement,
+      $.for_statement,
+      $.foreach_statement
     ),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
 
     if_statement: $ => seq(
       'if', '(', $._expression, ')',
-      choice(
-        seq($._expression, ';'),
-        $.block
-      ),
+      $._statement,
       repeat($.elseif_statement),
       optional($.else_statement)
     ),
 
     elseif_statement: $ => seq(
       'else', 'if', '(', $._expression, ')',
-      choice(
-        seq($._expression, ';'),
-        $.block
-      )
+      $._statement
     ),
 
     else_statement: $ => seq(
       'else',
-      choice(
-        seq($._expression, ';'),
-        $.block
-      )
+      $._statement_without_if
     ),
 
     try_statement: $ => seq(
@@ -421,6 +420,45 @@ module.exports = grammar({
 
     finally_clause: $ => seq(
       'finally', $.block
+    ),
+
+    while_statement: $ => seq(
+      'while',
+      '(',
+      $._expression,
+      ')',
+      $._statement
+    ),
+
+    do_statement: $ => seq(
+      'do',
+      $._statement,
+      'while',
+      '(', $._expression, ')',
+      ';'
+    ),
+
+    for_statement: $ => seq(
+      'for',
+      '(',
+      $.local_declaration,
+      $._expression,
+      ';',
+      $._expression,
+      repeat(seq(',', $._expression)),
+      ')',
+      $._statement
+    ),
+
+    foreach_statement: $ => seq(
+      'foreach',
+      '(',
+      $.type,
+      $.identifier,
+      'in',
+      $._expression,
+      ')',
+      $._statement
     )
   },
 
@@ -433,6 +471,7 @@ module.exports = grammar({
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
     [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
+    [$.if_statement]
   ],
 
   extras: $ => [
