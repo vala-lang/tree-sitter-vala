@@ -58,9 +58,11 @@ module.exports = grammar({
         $.object_creation_expression,
         $.this_access,
         $.initializer,
-        // --- expressions that have a precedence
         $.member_access_expression,
+        $.element_access_expression,
         $.method_call_expression,
+        $.yield_expression,
+        // --- expressions that have a precedence
         $.postfix_expression,
         $.static_cast_expression,
         $.typeof_expression,
@@ -96,6 +98,22 @@ module.exports = grammar({
       $.identifier
     ),
 
+    element_access_expression: $ => seq(
+      choice(
+        $.member_access_expression,
+        seq('(', $._expression, ')'),
+        $.literal
+      ),
+      repeat1($.element_access)
+    ),
+
+    element_access: $ => seq(
+      '[',
+      $._expression,
+      repeat(seq(',', $._expression)),
+      ']'
+    ),
+
     argument: $ => choice(
       seq('ref', $._expression),
       seq('out', $._expression),
@@ -106,36 +124,39 @@ module.exports = grammar({
     method_call_expression: $ => seq(
       choice(
         seq('(', $._expression, ')'),
-        seq($.member_access_expression, optional($.type_arguments))
+        seq($.member_access_expression, optional($.type_arguments)),
+        $.element_access_expression
       ),
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
       ')'
     ),
 
-    postfix_expression: $ => prec.left(14, seq($._expression, choice('++', '--'))),
-    static_cast_expression: $ => prec.right(13, seq('(', choice($.type, '!'), ')', $._expression)),
-    typeof_expression: $ => prec.right(13, seq('typeof', '(', $.type, ')')),
-    sizeof_expression: $ => prec.right(13, seq('sizeof', '(', $.type, ')')),
-    unary_expression: $ => prec.right(13, seq(choice('!', '~', '++', '--', '-', '*', '&'), $._expression)),
-    multiplicative_expression: $ => prec.left(12, seq($._expression, choice('*', '/', '%'), $._expression)),
-    arithmetic_expression: $ => prec.left(11, seq($._expression, choice('+', '-'), $._expression)),
-    bitshift_expression: $ => prec.left(10, seq($._expression, choice('<<', '>>'), $._expression)),
-    in_expression: $ => prec.left(9, seq($._expression, optional('not'), 'in', $._expression)),
-    dynamic_cast_expression: $ => prec.left(9, seq($._expression, 'as', $.type)),
-    type_relational_expression: $ => prec.left(9, seq($._expression, 'is', $.type)),
-    relational_expression: $ => prec.left(9, seq($._expression, choice('<', '<=', '>=', '>'), $._expression)),
-    equality_expression: $ => prec.left(8, seq($._expression, choice('==', '!='), $._expression)),
-    bitwise_and_expression: $ => prec.left(7, seq($._expression, '&', $._expression)),
-    bitwise_xor_expression: $ => prec.left(6, seq($._expression, '^', $._expression)),
-    bitwise_or_expression: $ => prec.left(5, seq($._expression, '|', $._expression)),
-    logical_and_expression: $ => prec.left(4, seq($._expression, '&&', $._expression)),
-    logical_or_expression: $ => prec.left(3, seq($._expression, '||', $._expression)),
-    null_coalescing_expression: $ => prec.left(2, seq($._expression, '??', $._expression)),
-    ternary_expression: $ => prec.right(1, seq($._expression, '?', $._expression, ':', $._expression)),
+    yield_expression: $ => seq('yield', $._expression),
+
+    postfix_expression: $ => prec.left(15, seq($._expression, choice('++', '--'))),
+    static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!'), ')', $._expression)),
+    typeof_expression: $ => prec.right(14, seq('typeof', '(', $.type, ')')),
+    sizeof_expression: $ => prec.right(14, seq('sizeof', '(', $.type, ')')),
+    unary_expression: $ => prec.right(14, seq(choice('!', '~', '++', '--', '-', '*', '&'), $._expression)),
+    multiplicative_expression: $ => prec.left(13, seq($._expression, choice('*', '/', '%'), $._expression)),
+    arithmetic_expression: $ => prec.left(12, seq($._expression, choice('+', '-'), $._expression)),
+    bitshift_expression: $ => prec.left(11, seq($._expression, choice('<<', '>>'), $._expression)),
+    in_expression: $ => prec.left(10, seq($._expression, optional('not'), 'in', $._expression)),
+    dynamic_cast_expression: $ => prec.left(10, seq($._expression, 'as', $.type)),
+    type_relational_expression: $ => prec.left(10, seq($._expression, 'is', $.type)),
+    relational_expression: $ => prec.left(10, seq($._expression, choice('<', '<=', '>=', '>'), $._expression)),
+    equality_expression: $ => prec.left(9, seq($._expression, choice('==', '!='), $._expression)),
+    bitwise_and_expression: $ => prec.left(8, seq($._expression, '&', $._expression)),
+    bitwise_xor_expression: $ => prec.left(7, seq($._expression, '^', $._expression)),
+    bitwise_or_expression: $ => prec.left(6, seq($._expression, '|', $._expression)),
+    logical_and_expression: $ => prec.left(5, seq($._expression, '&&', $._expression)),
+    logical_or_expression: $ => prec.left(4, seq($._expression, '||', $._expression)),
+    null_coalescing_expression: $ => prec.left(3, seq($._expression, '??', $._expression)),
+    ternary_expression: $ => prec.right(2, seq($._expression, '?', $._expression, ':', $._expression)),
 
     _assignment_operator: $ => choice('=', '+=', '-=', '|=', '&=', '^=', '/=', '*=', '%=', '<<=', '>>='),
-    assignment_expression: $ => prec.right(0, seq($._expression, $._assignment_operator, $._expression)),
+    assignment_expression: $ => prec.right(1, seq($._expression, $._assignment_operator, $._expression)),
 
     this_access: $ => 'this',
 
@@ -296,7 +317,7 @@ module.exports = grammar({
 
     creation_method_declaration: $ => seq(
       optional($.access_modifier),
-      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      repeat($.member_declaration_modifier),
       $.symbol,
       '(',
       optional(seq($.parameter, repeat(seq(',', $.parameter)))),
@@ -308,7 +329,7 @@ module.exports = grammar({
 
     method_declaration: $ => seq(
       optional($.access_modifier),
-      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      repeat($.member_declaration_modifier),
       $.type,
       $.symbol,
       optional($.type_arguments),
@@ -322,7 +343,7 @@ module.exports = grammar({
 
     field_declaration: $ => seq(
       optional($.access_modifier),
-      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      repeat($.member_declaration_modifier),
       $.type,
       $.identifier,
       optional(seq('=', $._expression)),
@@ -331,7 +352,7 @@ module.exports = grammar({
 
     constant_declaration: $ => seq(
       optional($.access_modifier),
-      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      repeat($.member_declaration_modifier),
       'const',
       $.type,
       $.identifier,
@@ -344,11 +365,11 @@ module.exports = grammar({
     
     property_declaration: $ => seq(
       optional($.access_modifier),
-      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      repeat($.member_declaration_modifier),
       $.type,
       $.symbol,
       '{',
-      repeat(choice(seq('default', '=', $._expression), $.property_accessor)),
+      repeat(choice(seq('default', '=', $._expression, ';'), $.property_accessor)),
       '}'
     ),
 
@@ -384,7 +405,13 @@ module.exports = grammar({
       $.while_statement,
       $.do_statement,
       $.for_statement,
-      $.foreach_statement
+      $.foreach_statement,
+      $.break_statement,
+      $.continue_statement,
+      $.lock_statement,
+      $.delete_statement,
+      $.throw_statement,
+      $.yield_statement
     ),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
@@ -459,6 +486,27 @@ module.exports = grammar({
       $._expression,
       ')',
       $._statement
+    ),
+
+    break_statement: $ => seq('break', ';'),
+
+    continue_statement: $ => seq('continue', ';'),
+
+    lock_statement: $ => seq(
+      'lock', '(', $._expression, ')',
+      $._statement
+    ),
+
+    delete_statement: $ => seq(
+      'delete', $._expression, ';'
+    ),
+
+    throw_statement: $ => seq(
+      'throw', $._expression, ';'
+    ),
+
+    yield_statement: $ => seq(
+      'yield', 'return', $._expression, ';'
     )
   },
 
@@ -470,8 +518,9 @@ module.exports = grammar({
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
     [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
+    [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
-    [$.if_statement]
+    [$.if_statement]                                                    // because of ambiguity with if statements
   ],
 
   extras: $ => [

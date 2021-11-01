@@ -23,12 +23,16 @@
 (verbatim_string) @string
 
 [
+ "abstract"
  "as"
  "async"
+ "break"
  "catch"
  "class"
  "const"
  "construct"
+ "continue"
+ "default"
  "do"
  "dynamic"
  "else"
@@ -40,6 +44,7 @@
  "if"
  "in"
  "is"
+ "lock"
  "namespace"
  "new"
  "not"
@@ -49,12 +54,15 @@
  "return"
  "set"
  "sizeof"
+ "throw"
+ "throws"
  "try"
  "typeof"
  "unowned"
  "virtual"
  "weak"
  "while"
+ "yield"
 ] @keyword
 
 [
