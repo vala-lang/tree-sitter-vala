@@ -411,7 +411,8 @@ module.exports = grammar({
       $.lock_statement,
       $.delete_statement,
       $.throw_statement,
-      $.yield_statement
+      $.yield_statement,
+      $.switch_statement
     ),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
@@ -507,6 +508,22 @@ module.exports = grammar({
 
     yield_statement: $ => seq(
       'yield', 'return', $._expression, ';'
+    ),
+
+    switch_statement: $ => seq(
+      'switch', '(', $._expression, ')',
+      '{',
+      repeat($.switch_section),
+      '}'
+    ),
+
+    switch_section: $ => seq(
+      choice(
+        seq('case', $._expression),
+        'default'
+      ),
+      ':',
+      repeat(choice($._statement, $.local_declaration))
     )
   },
 
