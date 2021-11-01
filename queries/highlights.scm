@@ -14,6 +14,7 @@
 (errorcode (identifier) @constant)
 (constant_declaration (identifier) @constant)
 (method_call_expression (member_access_expression (identifier) @function))
+(lambda_expression (identifier) @variable.parameter)
 (parameter (identifier) @variable.parameter)
 (property_declaration (symbol (identifier) @property))
 (this_access) @variable.builtin
@@ -124,6 +125,7 @@
  ">"
  "||"
  "&&"
+ "=>"
 ] @operator
 
 [

@@ -71,6 +71,7 @@ module.exports = grammar({
         $.element_access_expression,
         $.method_call_expression,
         $.yield_expression,
+        $.lambda_expression,
         // --- expressions that have a precedence
         $.postfix_expression,
         $.static_cast_expression,
@@ -145,6 +146,15 @@ module.exports = grammar({
     ),
 
     yield_expression: $ => seq('yield', $._expression),
+
+    lambda_expression: $ => seq(
+      choice(
+        $.identifier,
+        seq('(', $.identifier, repeat(seq(',', $.identifier)), ')')
+      ),
+      '=>',
+      choice($._expression, $.block)
+    ),
 
     postfix_expression: $ => prec.left(15, seq($._expression, choice('++', '--'))),
     static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!'), ')', $._expression)),
@@ -651,12 +661,13 @@ module.exports = grammar({
      $.object_creation_expression,
      $.member_declaration_modifier],                                    // because these all start with 'new'
     [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
+    [$.symbol, $.member_access_expression, $.lambda_expression],        // head of lambda expression may be head of symbol or MA
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
     [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
     [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
-    [$.if_statement]                                                    // because of ambiguity with if statements
+    [$.if_statement]                                                    // because of ambiguity with nested if statements
   ],
 
   extras: $ => [
