@@ -40,7 +40,9 @@ module.exports = grammar({
         $.struct_declaration,
         $.enum_declaration,
         $.errordomain_declaration,
+        $.delegate_declaration,
         $.method_declaration,
+        $.signal_declaration,
         $.field_declaration,
         $.constant_declaration
       )
@@ -335,8 +337,10 @@ module.exports = grammar({
         $.interface_declaration,
         $.struct_declaration,
         $.enum_declaration,
+        $.delegate_declaration,
         $.method_declaration,
         $.creation_method_declaration,
+        $.signal_declaration,
         $.field_declaration,
         $.constant_declaration,
         $.property_declaration
@@ -361,7 +365,9 @@ module.exports = grammar({
         $.interface_declaration,
         $.struct_declaration,
         $.enum_declaration,
+        $.delegate_declaration,
         $.method_declaration,
+        $.signal_declaration,
         $.field_declaration,
         $.constant_declaration,
         $.property_declaration
@@ -383,6 +389,7 @@ module.exports = grammar({
       repeat($.attribute),
       choice(
         $.method_declaration,
+        $.creation_method_declaration,
         $.field_declaration,
         $.constant_declaration,
         $.property_declaration
@@ -445,6 +452,30 @@ module.exports = grammar({
       choice($.block, ';')
     ),
 
+    delegate_declaration_modifier: $ => seq(
+      'async',
+      'class',
+      'extern',
+      'inline',
+      'abstract',
+      'virtual',
+      'override'
+    ),
+
+    delegate_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.delegate_declaration_modifier),
+      'delegate',
+      $.type,
+      $.symbol,
+      optional($.type_arguments),
+      '(',
+      optional(seq($.parameter, repeat(seq(',', $.parameter)))),
+      ')',
+      optional(seq('throws', $.type)),
+      ';'
+    ),
+
     method_declaration: $ => seq(
       optional($.access_modifier),
       repeat($.member_declaration_modifier),
@@ -456,6 +487,28 @@ module.exports = grammar({
       ')',
       optional(seq('throws', $.type)),
       optional(seq(choice('requires', 'ensures'), '(', $._expression, ')')),
+      choice($.block, ';')
+    ),
+
+    signal_declaration_modifier: $ => choice(
+      'async',
+      'extern',
+      'inline',
+      'abstract',
+      'virtual',
+      'override',
+      'new'
+    ),
+
+    signal_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.signal_declaration_modifier),
+      'signal',
+      $.type,
+      $.symbol,
+      '(',
+      optional(seq($.parameter, repeat(seq(',', $.parameter)))),
+      ')',
       choice($.block, ';')
     ),
 
@@ -656,6 +709,11 @@ module.exports = grammar({
     [$.member_declaration_modifier, $.class_declaration],               // because both can start with 'class'
     [$.member_declaration_modifier, $.type_declaration_modifier],       // because both share 'extern'
     [$.member_declaration_modifier, $.object_creation_expression],      // because OCEs can appear in the main block
+    [$.member_declaration_modifier, $.signal_declaration_modifier],     // both can start with 'new'
+    [$.member_declaration_modifier,
+     $.type_declaration_modifier,
+     $.signal_declaration_modifier],                                    // ambiguity between all three
+    [$.member_declaration_modifier, $.delegate_declaration_modifier],   // both can start with 'new'
     [$.array_creation_expression, $.member_declaration_modifier],       // because both can start with 'new ('
     [$.array_creation_expression,
      $.object_creation_expression,
