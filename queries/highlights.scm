@@ -24,6 +24,7 @@
  "as"
  "async"
  "class"
+ "const"
  "construct"
  "dynamic"
  "else"

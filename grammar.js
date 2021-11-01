@@ -4,7 +4,7 @@ module.exports = grammar({
   word: $ => $.identifier,
 
   rules: {
-    source_file: $ => seq(repeat($.using_directive), repeat($.namespace_member)),
+    source_file: $ => seq(repeat($.using_directive), repeat(choice($.namespace_member, $._statement))),
 
     // taken from tree-sitter-c
     // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
@@ -34,7 +34,8 @@ module.exports = grammar({
         $.namespace_declaration,
         $.class_declaration,
         $.method_declaration,
-        $.field_declaration
+        $.field_declaration,
+        $.constant_declaration
       )
     ),
 
@@ -54,6 +55,10 @@ module.exports = grammar({
     _expression: $ => choice(
         $.literal,
         seq('(', $._expression, ')'),
+        $.object_creation_expression,
+        $.this_access,
+        $.initializer,
+        // --- expressions that have a precedence
         $.member_access_expression,
         $.method_call_expression,
         $.postfix_expression,
@@ -76,13 +81,10 @@ module.exports = grammar({
         $.logical_or_expression,
         $.null_coalescing_expression,
         $.ternary_expression,
-        $.assignment_expression,
-        // --- expressions that do not have a precedence
-        $.object_creation_expression,
-        $.this_access
+        $.assignment_expression
     ),
 
-    member_access_expression: $ => prec.right(15,
+    member_access_expression: $ => prec.right(
       seq(
         optional(seq(
           choice(
@@ -116,7 +118,7 @@ module.exports = grammar({
     ),
 
     postfix_expression: $ => prec.left(14, seq($._expression, choice('++', '--'))),
-    static_cast_expression: $ => prec.right(13, seq(seq('(', choice($.type, '!'), ')'), $._expression)),
+    static_cast_expression: $ => prec.right(13, seq('(', choice($.type, '!'), ')', $._expression)),
     typeof_expression: $ => prec.right(13, seq('typeof', '(', $.type, ')')),
     sizeof_expression: $ => prec.right(13, seq('sizeof', '(', $.type, ')')),
     unary_expression: $ => prec.right(13, seq(choice('!', '~', '++', '--', '-', '*', '&'), $._expression)),
@@ -152,6 +154,12 @@ module.exports = grammar({
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
       ')'
+    ),
+
+    initializer: $ => seq(
+      '{',
+      optional(seq($.argument, repeat(seq(',', $.argument)))),
+      '}'
     ),
 
     boolean: $ => choice('true', 'false'),
@@ -282,6 +290,7 @@ module.exports = grammar({
         $.method_declaration,
         $.creation_method_declaration,
         $.field_declaration,
+        $.constant_declaration,
         $.property_declaration
       ),
     ),
@@ -327,6 +336,19 @@ module.exports = grammar({
       optional(seq('=', $._expression)),
       ';'
     ),
+
+    constant_declaration: $ => seq(
+      optional($.access_modifier),
+      optional(seq($.member_declaration_modifier, repeat(seq(',', $.member_declaration_modifier)))),
+      'const',
+      $.type,
+      $.identifier,
+      optional($.inline_array_type),
+      optional(seq('=', $._expression)),
+      ';'
+    ),
+
+    inline_array_type: $ => seq('[', $.integer, ']'),
     
     property_declaration: $ => seq(
       optional($.access_modifier),
@@ -346,25 +368,25 @@ module.exports = grammar({
     ),
 
     local_declaration: $ => seq(
-        $.type,
-        $.identifier,
-        optional(seq('=', $._expression)),
-        ';'
+      $.type,
+      $.identifier,
+      optional($.inline_array_type),
+      optional(seq('=', $._expression)),
+      ';'
     ),
 
-    block: $ => seq('{', repeat($._statement), '}'),
+    block: $ => seq('{', repeat(choice($._statement, $.local_declaration)), '}'),
 
     _statement: $ => choice(
       $.block,
       ';',
       seq($._expression, ';'),
-      $.local_declaration,
       $.return_statement,
       $.if_statement
       // TODO - for, while, foreach, return, try
     ),
 
-    return_statement: $ => seq('return', $._expression, ';'),
+    return_statement: $ => seq('return', optional($._expression), ';'),
 
     if_statement: $ => seq(
       'if', '(', $._expression, ')',
@@ -394,9 +416,11 @@ module.exports = grammar({
   },
 
   conflicts: $ => [
-    [$.type, $._expression],                                            // for static_cast_expression
     [$.member_declaration_modifier, $.class_declaration],               // because both can start with 'class'
-    [$.member_declaration_modifier, $.type_declaration_modifier]        // because both share 'extern'
+    [$.member_declaration_modifier, $.type_declaration_modifier],       // because both share 'extern'
+    [$.member_declaration_modifier, $.object_creation_expression],      // because OCEs can appear in the main block
+    [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
+    [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
   ],
 
   extras: $ => [
