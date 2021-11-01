@@ -29,7 +29,7 @@ module.exports = grammar({
       seq(optional('global::'), $.identifier)
     ),
 
-    identifier: $ => /@?[A-Za-z_]\w*/,
+    identifier: $ => /[@A-Za-z_]\w*/,
 
     namespace_member: $ => seq(
       repeat($.attribute),
@@ -62,23 +62,12 @@ module.exports = grammar({
     ),
 
     _expression: $ => choice(
-        $.literal,
         seq('(', $._expression, ')'),
-        $.array_creation_expression,
-        $.object_creation_expression,
-        $.this_access,
-        $.base_access,
+        $._contained_expression,
         $.initializer,
-        $.member_access_expression,
-        $.element_access_expression,
-        $.method_call_expression,
         $.yield_expression,
         $.lambda_expression,
-        // --- expressions that have a precedence
-        $.postfix_expression,
         $.static_cast_expression,
-        $.typeof_expression,
-        $.sizeof_expression,
         $.unary_expression,
         $.multiplicative_expression,
         $.arithmetic_expression,
@@ -98,12 +87,25 @@ module.exports = grammar({
         $.assignment_expression
     ),
 
+    // expressions that never need to be wrapped in parentheses
+    _contained_expression: $ => choice(
+        $.literal,
+        $.array_creation_expression,
+        $.object_creation_expression,
+        $.this_access,
+        $.base_access,
+        $.member_access_expression,
+        $.element_access_expression,
+        $.method_call_expression,
+        $.sizeof_expression,
+        $.typeof_expression,
+        $.postfix_expression,
+    ),
+
     member_access_expression: $ => seq(
       optional(seq(
         choice(
-          $.this_access,
-          $.base_access,
-          $.member_access_expression,
+          $._contained_expression,
           seq('(', $._expression, ')')
         ),
         choice('.', '?.', '->'),
@@ -113,9 +115,8 @@ module.exports = grammar({
 
     element_access_expression: $ => seq(
       choice(
-        $.member_access_expression,
+        $._contained_expression,
         seq('(', $._expression, ')'),
-        $.literal
       ),
       repeat1($.element_access)
     ),
@@ -138,9 +139,7 @@ module.exports = grammar({
       choice(
         seq('(', $._expression, ')'),
         seq($.member_access_expression, optional($.type_arguments)),
-        $.element_access_expression,
-        $.this_access,
-        $.base_access
+        $._contained_expression
       ),
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
@@ -198,7 +197,20 @@ module.exports = grammar({
       $.unqualified_type,
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
-      ')'
+      ')',
+      optional($.object_initializers)
+    ),
+
+    object_initializers: $ => seq(
+      '{',
+      optional(seq($.member_initializer, repeat(seq(',', $.member_initializer)))),
+      '}'
+    ),
+
+    member_initializer: $ => seq(
+      $.identifier,
+      '=',
+      $._expression
     ),
 
     initializer: $ => seq(
@@ -242,8 +254,7 @@ module.exports = grammar({
       seq('void', repeat('*')),
       seq(
         optional('dynamic'),
-        optional('unowned'),
-        optional('weak'),
+        optional(choice('unowned', 'owned', 'weak')),
         '(',
         $.type,
         ')',
@@ -251,8 +262,7 @@ module.exports = grammar({
       ),
       seq(
         optional('dynamic'),
-        optional('unowned'),
-        optional('weak'),
+        optional(choice('unowned', 'owned', 'weak')),
         $.symbol,
         optional($.type_arguments),
         optional('*'),
@@ -404,15 +414,20 @@ module.exports = grammar({
       '{',
       $.enum_value,
       repeat(seq(',', $.enum_value)),
-      optional(seq(';', repeat(choice($.method_declaration, $.constant_declaration)))),
+      optional(choice(
+        ',',    // support trailing ','
+        seq(';', repeat(seq(
+          repeat($.attribute),
+          choice($.method_declaration, $.constant_declaration)
+        )))
+      )),
       '}'
     ),
 
     enum_value: $ => seq(
       repeat($.attribute),
       $.identifier,
-      '=',
-      $._expression
+      optional(seq('=', $._expression))
     ),
 
     errordomain_declaration: $ => seq(
@@ -423,7 +438,10 @@ module.exports = grammar({
       '{',
       $.errorcode,
       repeat(seq(',', $.errorcode)),
-      optional(seq(';', repeat($.method_declaration))),
+      optional(choice(
+        ',',    // support trailing ','
+        seq(';', repeat($.method_declaration))
+      )),
       '}'
     ),
 
@@ -434,10 +452,18 @@ module.exports = grammar({
     ),
 
     parameter: $ => seq(
-      optional(choice('out', 'ref')),
-      $.type,
-      $.identifier,
-      optional(seq('=', $._expression))
+      repeat($.attribute),
+      choice(
+        seq(
+          optional('params'),
+          optional(choice('out', 'ref')),
+          $.type,
+          $.identifier,
+          optional($.inline_array_type),
+          optional(seq('=', $._expression))
+        ),
+        '...'
+      )
     ),
 
     creation_method_declaration: $ => seq(
@@ -517,6 +543,7 @@ module.exports = grammar({
       repeat($.member_declaration_modifier),
       $.type,
       $.identifier,
+      optional($.inline_array_type),
       optional(seq('=', $._expression)),
       ';'
     ),
@@ -549,8 +576,8 @@ module.exports = grammar({
       optional($.access_modifier),
       choice(
         seq(optional('owned'), 'get'),
-        seq('set', optional('construct')),
-        seq('construct', 'set')
+        seq(optional('owned'), 'set', optional('construct')),
+        seq('construct', optional('set'))
       ),
       choice(';', $.block)
     ),
@@ -723,7 +750,9 @@ module.exports = grammar({
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
     [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
+    [$._contained_expression, $.method_call_expression],                // for ambiguity because of contained expressions
     [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
+    [$.element_access_expression],                                      // for ambiguity because of contained expressions
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
     [$.if_statement]                                                    // because of ambiguity with nested if statements
   ],
