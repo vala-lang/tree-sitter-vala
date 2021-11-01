@@ -6,6 +6,8 @@ void main() {
     3 + b.c;
     a in b();
     3 = 3;
+    x.y.z();
+    (3 + 1).to_string();
 }
 
 ---
@@ -24,4 +26,16 @@ void main() {
           (method_call_expression (member_access_expression (identifier))))
         (assignment_expression
           (literal (integer))
-          (literal (integer)))))))
+          (literal (integer)))
+        (method_call_expression
+          (member_access_expression
+            (member_access_expression
+              (member_access_expression (identifier))
+              (identifier))
+            (identifier)))
+        (method_call_expression
+          (member_access_expression
+            (arithmetic_expression
+              (literal (integer))
+              (literal (integer)))
+            (identifier)))))))

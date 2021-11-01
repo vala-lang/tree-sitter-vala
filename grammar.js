@@ -84,18 +84,16 @@ module.exports = grammar({
         $.assignment_expression
     ),
 
-    member_access_expression: $ => prec.right(
-      seq(
-        optional(seq(
-          choice(
-            $.this_access,
-            $.member_access_expression,
-            seq('(', $._expression, ')')
-          ),
-          choice('.', '?.', '->'),
-        )),
-        $.identifier
-      ),
+    member_access_expression: $ => seq(
+      optional(seq(
+        choice(
+          $.this_access,
+          $.member_access_expression,
+          seq('(', $._expression, ')')
+        ),
+        choice('.', '?.', '->'),
+      )),
+      $.identifier
     ),
 
     argument: $ => choice(
@@ -105,16 +103,14 @@ module.exports = grammar({
       seq($.identifier, ':', $._expression)
     ),
 
-    method_call_expression: $ => prec.right(15,
-      seq(
-        choice(
-          seq('(', $._expression, ')'),
-          seq($.member_access_expression, optional($.type_arguments))
-        ),
-        '(',
-        optional(seq($.argument, repeat(seq(',', $.argument)))),
-        ')'
-      )
+    method_call_expression: $ => seq(
+      choice(
+        seq('(', $._expression, ')'),
+        seq($.member_access_expression, optional($.type_arguments))
+      ),
+      '(',
+      optional(seq($.argument, repeat(seq(',', $.argument)))),
+      ')'
     ),
 
     postfix_expression: $ => prec.left(14, seq($._expression, choice('++', '--'))),
@@ -192,28 +188,26 @@ module.exports = grammar({
         $.verbatim_string
     ),
 
-    type: $ => prec.right(
-      choice(
-        seq('void', repeat('*')),
-        seq(
-          optional('dynamic'),
-          optional('unowned'),
-          optional('weak'),
-          '(',
-          $.type,
-          ')',
-          repeat1($.array_type)
-        ),
-        seq(
-          optional('dynamic'),
-          optional('unowned'),
-          optional('weak'),
-          $.symbol,
-          optional($.type_arguments),
-          optional('*'),
-          optional('?'),
-          repeat($.array_type)
-        )
+    type: $ => choice(
+      seq('void', repeat('*')),
+      seq(
+        optional('dynamic'),
+        optional('unowned'),
+        optional('weak'),
+        '(',
+        $.type,
+        ')',
+        repeat1($.array_type)
+      ),
+      seq(
+        optional('dynamic'),
+        optional('unowned'),
+        optional('weak'),
+        $.symbol,
+        optional($.type_arguments),
+        optional('*'),
+        optional('?'),
+        repeat($.array_type)
       )
     ),
 
@@ -224,13 +218,11 @@ module.exports = grammar({
       '>'
     ),
 
-    array_type: $ => prec.right(
-      seq(
-        '[',
-        optional($.array_size),
-        ']',
-        optional('?')
-      )
+    array_type: $ => seq(
+      '[',
+      optional($.array_size),
+      ']',
+      optional('?')
     ),
 
     array_size: $ => seq(
@@ -420,6 +412,9 @@ module.exports = grammar({
     [$.member_declaration_modifier, $.type_declaration_modifier],       // because both share 'extern'
     [$.member_declaration_modifier, $.object_creation_expression],      // because OCEs can appear in the main block
     [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
+    [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
+    [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
+    [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
   ],
 

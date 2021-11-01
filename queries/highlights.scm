@@ -7,7 +7,9 @@
 (attribute) @attribute
 (method_declaration (symbol (identifier) @function))
 (creation_method_declaration (symbol (identifier) @constructor))
+(method_call_expression (member_access_expression (identifier) @function))
 (parameter (identifier) @variable.parameter)
+(property_declaration (symbol (identifier) @property))
 (this_access) @variable.builtin
 (boolean) @constant.builtin
 (character) @constant
@@ -47,3 +49,53 @@
  "virtual"
  "weak"
 ] @keyword
+
+[
+ "="
+ "+"
+ "+="
+ "-"
+ "-="
+ "|"
+ "|="
+ "&"
+ "&="
+ "^"
+ "^="
+ "/"
+ "/="
+ "*"
+ "*="
+ "%"
+ "%="
+ "<<"
+ "<<="
+ ">>"
+ ">>="
+ "."
+ "?."
+ "->"
+ "!"
+ "~"
+ "??"
+ "?"
+ ":"
+ "<"
+ ">"
+ "||"
+ "&&"
+] @operator
+
+[
+ ","
+ ";"
+] @punctuation.delimiter
+
+[
+ "("
+ ")"
+ "{"
+ "}"
+ "["
+ "]"
+] @punctuation.bracket
