@@ -33,6 +33,10 @@ module.exports = grammar({
       choice(
         $.namespace_declaration,
         $.class_declaration,
+        $.interface_declaration,
+        $.struct_declaration,
+        $.enum_declaration,
+        $.errordomain_declaration,
         $.method_declaration,
         $.field_declaration,
         $.constant_declaration
@@ -166,14 +170,9 @@ module.exports = grammar({
 
     base_access: $ => 'base',
 
-    oce_type: $ => seq(
-      $.symbol,
-      optional($.type_arguments),
-    ),
-
     object_creation_expression: $ => seq(
       'new',
-      $.oce_type,
+      $.unqualified_type,
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
       ')'
@@ -239,6 +238,11 @@ module.exports = grammar({
       )
     ),
 
+    unqualified_type: $ => seq(
+      $.symbol,
+      optional($.type_arguments)
+    ),
+
     type_arguments: $ => seq(
       '<',
       $.type,
@@ -294,9 +298,9 @@ module.exports = grammar({
 
     class_declaration: $ => seq(
       optional($.access_modifier),
-      optional(seq($.type_declaration_modifier, repeat(seq(',', $.type_declaration_modifier)))),
+      repeat($.type_declaration_modifier),
       'class',
-      $.type,
+      $.unqualified_type,
       optional(seq(':', $.type, repeat(seq(',', $.type)))),
       '{',
       repeat($.class_member),
@@ -307,12 +311,98 @@ module.exports = grammar({
       repeat($.attribute),
       choice(
         $.class_declaration,
+        $.interface_declaration,
+        $.struct_declaration,
+        $.enum_declaration,
         $.method_declaration,
         $.creation_method_declaration,
         $.field_declaration,
         $.constant_declaration,
         $.property_declaration
       ),
+    ),
+
+    interface_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.type_declaration_modifier),
+      'interface',
+      $.unqualified_type,
+      optional(seq(':', $.type, repeat(seq(',', $.type)))),
+      '{',
+      repeat($.interface_member),
+      '}'
+    ),
+
+    interface_member: $ => seq(
+      repeat($.attribute),
+      choice(
+        $.class_declaration,
+        $.interface_declaration,
+        $.struct_declaration,
+        $.enum_declaration,
+        $.method_declaration,
+        $.field_declaration,
+        $.constant_declaration,
+        $.property_declaration
+      )
+    ),
+
+    struct_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.type_declaration_modifier),
+      'struct',
+      $.unqualified_type,
+      optional(seq(':', $.type, repeat(seq(',', $.type)))),
+      '{',
+      repeat($.struct_member),
+      '}'
+    ),
+
+    struct_member: $ => seq(
+      repeat($.attribute),
+      choice(
+        $.method_declaration,
+        $.field_declaration,
+        $.constant_declaration,
+        $.property_declaration
+      )
+    ),
+
+    enum_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.type_declaration_modifier),
+      'enum',
+      $.symbol,
+      '{',
+      $.enum_value,
+      repeat(seq(',', $.enum_value)),
+      optional(seq(';', repeat(choice($.method_declaration, $.constant_declaration)))),
+      '}'
+    ),
+
+    enum_value: $ => seq(
+      repeat($.attribute),
+      $.identifier,
+      '=',
+      $._expression
+    ),
+
+    errordomain_declaration: $ => seq(
+      optional($.access_modifier),
+      repeat($.type_declaration_modifier),
+      'errordomain',
+      $.symbol,
+      '{',
+      $.errorcode,
+      repeat(seq(',', $.errorcode)),
+      optional(seq(';', repeat($.method_declaration))),
+      '}'
+    ),
+
+    errorcode: $ => seq(
+      repeat($.attribute),
+      $.identifier,
+      optional(seq('=', $._expression))
     ),
 
     parameter: $ => seq(

@@ -2,11 +2,15 @@
 
 (comment) @comment
 (type) @type
-(oce_type) @type ; unqualified types appearing within object creation expressions
-(access_modifier) @keyword
+(unqualified_type) @type
 (attribute) @attribute
 (method_declaration (symbol (identifier) @function))
 (creation_method_declaration (symbol (identifier) @constructor))
+(enum_declaration (symbol) @type)
+(enum_value (identifier) @constant)
+(errordomain_declaration (symbol) @type)
+(errorcode (identifier) @constant)
+(constant_declaration (identifier) @constant)
 (method_call_expression (member_access_expression (identifier) @function))
 (parameter (identifier) @variable.parameter)
 (property_declaration (symbol (identifier) @property))
@@ -42,6 +46,8 @@
  "do"
  "dynamic"
  "else"
+ "enum"
+ "errordomain"
  "extern"
  "finally"
  "for"
@@ -49,6 +55,9 @@
  "get"
  "if"
  "in"
+ "inline"
+ "interface"
+ "internal"
  "is"
  "lock"
  "namespace"
@@ -56,10 +65,15 @@
  "not"
  "out"
  "override"
+ "private"
+ "protected"
+ "public"
  "ref"
  "return"
  "set"
  "sizeof"
+ "static"
+ "struct"
  "switch"
  "throw"
  "throws"
