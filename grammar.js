@@ -57,6 +57,7 @@ module.exports = grammar({
         seq('(', $._expression, ')'),
         $.object_creation_expression,
         $.this_access,
+        $.base_access,
         $.initializer,
         $.member_access_expression,
         $.element_access_expression,
@@ -90,6 +91,7 @@ module.exports = grammar({
       optional(seq(
         choice(
           $.this_access,
+          $.base_access,
           $.member_access_expression,
           seq('(', $._expression, ')')
         ),
@@ -125,7 +127,9 @@ module.exports = grammar({
       choice(
         seq('(', $._expression, ')'),
         seq($.member_access_expression, optional($.type_arguments)),
-        $.element_access_expression
+        $.element_access_expression,
+        $.this_access,
+        $.base_access
       ),
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
@@ -159,6 +163,8 @@ module.exports = grammar({
     assignment_expression: $ => prec.right(1, seq($._expression, $._assignment_operator, $._expression)),
 
     this_access: $ => 'this',
+
+    base_access: $ => 'base',
 
     oce_type: $ => seq(
       $.symbol,
