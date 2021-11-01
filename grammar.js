@@ -374,8 +374,9 @@ module.exports = grammar({
       ';',
       seq($._expression, ';'),
       $.return_statement,
-      $.if_statement
-      // TODO - for, while, foreach, return, try
+      $.if_statement,
+      $.try_statement
+      // TODO - for, while, foreach, return
     ),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
@@ -404,6 +405,22 @@ module.exports = grammar({
         seq($._expression, ';'),
         $.block
       )
+    ),
+
+    try_statement: $ => seq(
+      'try',
+      $.block,
+      repeat($.catch_clause),
+      optional($.finally_clause)
+    ),
+
+    catch_clause: $ => seq(
+      'catch', '(', $.type, $.identifier, ')',
+      $.block
+    ),
+
+    finally_clause: $ => seq(
+      'finally', $.block
     )
   },
 
