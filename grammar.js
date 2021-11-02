@@ -231,10 +231,15 @@ module.exports = grammar({
     null: $ => 'null',
     real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?/,
     regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
-    string: $ => /"([^"]+|\\")*"/,
+    string: $ => seq(
+      '"',
+      repeat(choice(/([^"%]+|\\")/, $.string_formatter, /%[^$#0\- +'I\d.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%]/)),
+      '"'
+    ),
+    string_formatter: $ => /%\$?[#0\- +'I]?\d*(\.\d+)?(hh?|ll?|q|L|j|z|Z|t)?[diouxXeEfFgGaAcsCSpnm%]/,
     template_string: $ => seq(
       '@"',
-      repeat(choice(/([^$"]+|\\")+/, $.template_string_expression)),
+      repeat(choice(/([^$"]+|\\")+/, $.template_string_expression, '$$')),
       '"'
     ),
     template_string_expression: $ => choice(
@@ -448,7 +453,7 @@ module.exports = grammar({
       repeat(seq(',', $.errorcode)),
       optional(choice(
         ',',    // support trailing ','
-        seq(';', repeat($.method_declaration))
+        seq(';', repeat(seq(repeat($.attribute), $.method_declaration)))
       )),
       '}'
     ),
