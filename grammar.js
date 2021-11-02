@@ -151,14 +151,14 @@ module.exports = grammar({
     lambda_expression: $ => seq(
       choice(
         $.identifier,
-        seq('(', $.identifier, repeat(seq(',', $.identifier)), ')')
+        seq('(', optional(seq($.identifier, repeat(seq(',', $.identifier)))), ')')
       ),
       '=>',
       choice($._expression, $.block)
     ),
 
     postfix_expression: $ => prec.left(15, seq($._expression, choice('++', '--'))),
-    static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!'), ')', $._expression)),
+    static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!', 'owned'), ')', $._expression)),
     typeof_expression: $ => prec.right(14, seq('typeof', '(', $.type, ')')),
     sizeof_expression: $ => prec.right(14, seq('sizeof', '(', $.type, ')')),
     unary_expression: $ => prec.right(14, seq(choice('!', '~', '++', '--', '-', '*', '&'), $._expression)),
@@ -353,7 +353,9 @@ module.exports = grammar({
         $.signal_declaration,
         $.field_declaration,
         $.constant_declaration,
-        $.property_declaration
+        $.property_declaration,
+        $.constructor_declaration,
+        $.destructor_declaration
       ),
     ),
 
@@ -567,9 +569,12 @@ module.exports = grammar({
       $.type,
       $.symbol,
       '{',
-      repeat(choice(seq('default', '=', $._expression, ';'), $.property_accessor)),
+      choice($.property_default, $.property_accessor),
+      repeat(choice($.property_default, $.property_accessor)),
       '}'
     ),
+
+    property_default: $ => seq('default', '=', $._expression, ';'),
 
     property_accessor: $ => seq(
       repeat($.attribute),
@@ -582,12 +587,42 @@ module.exports = grammar({
       choice(';', $.block)
     ),
 
+    constructor_declaration_modifier: $ => choice(
+      'async',
+      'class',
+      'extern',
+      'inline',
+      'static',
+      'abstract',
+      'virtual',
+      'override'
+    ),
+
+    constructor_declaration: $ => seq(
+      repeat($.constructor_declaration_modifier),
+      'construct',
+      $.block
+    ),
+
+    destructor_declaration: $ => seq(
+      repeat($.constructor_declaration_modifier),
+      '~',
+      $.identifier,
+      '(', ')',
+      $.block
+    ),
+
     local_declaration: $ => seq(
       $.type,
+      $.assignment,
+      repeat(seq(',', $.assignment)),
+      ';'
+    ),
+
+    assignment: $ => seq(
       $.identifier,
       optional($.inline_array_type),
-      optional(seq('=', $._expression)),
-      ';'
+      optional(seq('=', $._expression))
     ),
 
     block: $ => seq('{', repeat(choice($._statement, $.local_declaration)), '}'),
@@ -671,14 +706,13 @@ module.exports = grammar({
     for_statement: $ => seq(
       'for',
       '(',
-      choice(
+      optional(choice(
         $.local_declaration,
         seq($._expression, ';')
-      ),
-      $._expression,
+      )),
+      optional($._expression),
       ';',
-      $._expression,
-      repeat(seq(',', $._expression)),
+      optional(seq($._expression, repeat(seq(',', $._expression)))),
       ')',
       $._statement
     ),
@@ -729,6 +763,35 @@ module.exports = grammar({
       ),
       ':',
       repeat(choice($._statement, $.local_declaration))
+    ),
+
+    // --- preprocessor
+
+    _preprocessor_directive_start: $ => /#[\t ]*/,
+
+    _preprocessor_statement: $ => seq(
+      $._preprocessor_directive_start,
+      choice(
+        $.if_directive,
+        $.elif_directive,
+        $.else_directive,
+        $.endif_directive
+      )
+    ),
+
+    if_directive: $ => seq('if', $._preprocessor_expression),
+
+    elif_directive: $ => seq('elif', $._preprocessor_expression),
+
+    else_directive: $ => 'else',
+
+    endif_directive: $ => 'endif',
+
+    _preprocessor_expression: $ => choice(
+      seq('(', $._preprocessor_expression, ')'),
+      $.identifier,
+      $.literal
+      // TODO: more preproc expressions
     )
   },
 
@@ -745,6 +808,21 @@ module.exports = grammar({
     [$.array_creation_expression,
      $.object_creation_expression,
      $.member_declaration_modifier],                                    // because these all start with 'new'
+    [$.member_declaration_modifier,
+     $.delegate_declaration_modifier,
+     $.constructor_declaration_modifier],                               // these all start with 'class'
+    [$.member_declaration_modifier,
+     $.signal_declaration_modifier,
+     $.constructor_declaration_modifier],                               // these all start with 'class'
+    [$.member_declaration_modifier,
+     $.constructor_declaration_modifier],                               // these start with 'class'
+    [$.member_declaration_modifier,
+     $.type_declaration_modifier,
+     $.constructor_declaration_modifier],                               // these start with 'class'
+    [$.member_declaration_modifier,
+     $.type_declaration_modifier,
+     $.signal_declaration_modifier,
+     $.constructor_declaration_modifier],                               // these start with 'class'
     [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
     [$.symbol, $.member_access_expression, $.lambda_expression],        // head of lambda expression may be head of symbol or MA
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
@@ -760,5 +838,6 @@ module.exports = grammar({
   extras: $ => [
     /\s|\\\r?\n/,
     $.comment,
+    $._preprocessor_statement
   ],
 });
