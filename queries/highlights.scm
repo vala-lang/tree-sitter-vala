@@ -17,8 +17,11 @@
 (lambda_expression (identifier) @variable.parameter)
 (parameter (identifier) @variable.parameter)
 (property_declaration (symbol (identifier) @property))
-(this_access) @variable.builtin
-(base_access) @variable.builtin
+[
+ (this_access)
+ (base_access)
+ (value_access)
+] @variable.builtin
 (boolean) @constant.builtin
 (character) @constant
 (integer) @number

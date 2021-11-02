@@ -94,6 +94,7 @@ module.exports = grammar({
         $.object_creation_expression,
         $.this_access,
         $.base_access,
+        $.value_access,
         $.member_access_expression,
         $.element_access_expression,
         $.method_call_expression,
@@ -189,6 +190,8 @@ module.exports = grammar({
     this_access: $ => 'this',
 
     base_access: $ => 'base',
+
+    value_access: $ => 'value',
 
     array_creation_expression: $ => seq(
       'new',
