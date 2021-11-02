@@ -123,9 +123,14 @@ module.exports = grammar({
 
     element_access: $ => seq(
       '[',
-      $._expression,
-      repeat(seq(',', $._expression)),
+      choice($._expression, $.slice_expression),
+      repeat(seq(',', choice($._expression, $.slice_expression))),
       ']'
+    ),
+
+    slice_expression: $ => choice(
+      seq($._expression, ':', optional($._expression)),
+      seq(':', $._expression)
     ),
 
     argument: $ => choice(
@@ -189,12 +194,13 @@ module.exports = grammar({
       'new',
       $.type,
       $.inline_array_type,
-      $.initializer
+      optional($.initializer)
     ),
 
     object_creation_expression: $ => seq(
       'new',
-      $.unqualified_type,
+      $.type,
+      optional(seq('.', $.identifier)),
       '(',
       optional(seq($.argument, repeat(seq(',', $.argument)))),
       ')',
@@ -203,7 +209,7 @@ module.exports = grammar({
 
     object_initializers: $ => seq(
       '{',
-      optional(seq($.member_initializer, repeat(seq(',', $.member_initializer)))),
+      optional(seq($.member_initializer, repeat(seq(',', $.member_initializer)), optional(',') /* support trailing comma */)),
       '}'
     ),
 
@@ -215,12 +221,12 @@ module.exports = grammar({
 
     initializer: $ => seq(
       '{',
-      optional(seq($.argument, repeat(seq(',', $.argument)))),
+      optional(seq($.argument, repeat(seq(',', $.argument)), optional(',') /* support trailing comma */)),
       '}'
     ),
 
     boolean: $ => choice('true', 'false'),
-    character: $ => /'\S'/,
+    character: $ => /'(\S+|\s)'/,
     integer: $ => choice(/[1-9]\d*|0[0-7]*/, /0[xX][A-Fa-f0-9]+/),
     null: $ => 'null',
     real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?/,
@@ -561,7 +567,7 @@ module.exports = grammar({
       ';'
     ),
 
-    inline_array_type: $ => seq('[', optional($.integer), ']'),
+    inline_array_type: $ => seq('[', optional($._expression), ']'),
     
     property_declaration: $ => seq(
       optional($.access_modifier),
@@ -706,10 +712,7 @@ module.exports = grammar({
     for_statement: $ => seq(
       'for',
       '(',
-      optional(choice(
-        $.local_declaration,
-        seq($._expression, ';')
-      )),
+      optional(choice($.local_declaration, seq($._expression, ';'), ';')),
       optional($._expression),
       ';',
       optional(seq($._expression, repeat(seq(',', $._expression)))),
@@ -827,6 +830,7 @@ module.exports = grammar({
     [$.symbol, $.member_access_expression, $.lambda_expression],        // head of lambda expression may be head of symbol or MA
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
+    [$.symbol, $.type],                                                 // for object creation expression
     [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
     [$._contained_expression, $.method_call_expression],                // for ambiguity because of contained expressions
     [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
