@@ -232,13 +232,14 @@ module.exports = grammar({
     character: $ => /'(\S+|\s)'/,
     integer: $ => choice(/[1-9]\d*|0[0-7]*/, /0[xX][A-Fa-f0-9]+/),
     null: $ => 'null',
-    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?/,
+    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?f?/,
     regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
     string: $ => seq(
       '"',
-      repeat(choice(/([^"%]+|\\")/, $.string_formatter, /%[^$#0\- +'I\d.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%]/)),
+      repeat(choice(/[^"%\\]+/, $.escape_sequence, $.string_formatter, /%[^$#0\- +'I\d.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%]/)),
       '"'
     ),
+    escape_sequence: $ => /\\([abefnrtv\'"?]|[0-7]{3}|[xX][A-Fa-f0-9]{2}|[uU][A-Fa-f0-9]{4,8})/,
     string_formatter: $ => /%\$?[#0\- +'I]?\d*(\.\d+)?(hh?|ll?|q|L|j|z|Z|t)?[diouxXeEfFgGaAcsCSpnm%]/,
     template_string: $ => seq(
       '@"',
@@ -757,7 +758,9 @@ module.exports = grammar({
     ),
 
     yield_statement: $ => seq(
-      'yield', 'return', $._expression, ';'
+      'yield',
+      optional(seq('return', $._expression)),
+      ';'
     ),
 
     switch_statement: $ => seq(

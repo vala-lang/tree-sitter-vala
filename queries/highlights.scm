@@ -29,7 +29,10 @@
 (real) @number
 (regex) @constant
 (string) @string
-(string_formatter) @string.special
+[
+ (escape_sequence)
+ (string_formatter)
+] @string.special
 (template_string) @string
 (template_string_expression) @string.special
 (verbatim_string) @string
