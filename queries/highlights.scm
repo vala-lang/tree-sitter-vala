@@ -4,8 +4,8 @@
 (type) @type
 (unqualified_type) @type
 (attribute) @attribute
-(method_declaration (symbol (symbol) @type (identifier) @function))
-(method_declaration (symbol (identifier) @function))
+(method_declaration (symbol (symbol) @type (identifier) @function.method))
+(method_declaration (symbol (identifier) @function.method))
 (destructor_declaration (identifier) @function)
 (creation_method_declaration (symbol (symbol) @type (identifier) @constructor))
 (creation_method_declaration (symbol (identifier) @constructor))
