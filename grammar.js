@@ -635,13 +635,22 @@ module.exports = grammar({
       ';'
     ),
 
+    local_function_declaration: $ => seq(
+        $.type,
+        $.symbol,
+        '(',
+        optional(seq($.parameter, repeat(seq(',', $.parameter)))),
+        ')',
+        $.block
+    ),
+
     assignment: $ => seq(
       $.identifier,
       optional($.inline_array_type),
       optional(seq('=', $._expression))
     ),
 
-    block: $ => seq('{', repeat(choice($._statement, $.local_declaration)), '}'),
+    block: $ => seq('{', repeat(choice($._statement, $.local_declaration, $.local_function_declaration)), '}'),
 
     _statement: $ => choice(
       $.if_statement,

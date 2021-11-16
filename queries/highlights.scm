@@ -6,6 +6,8 @@
 (attribute) @attribute
 (method_declaration (symbol (symbol) @type (identifier) @function.method))
 (method_declaration (symbol (identifier) @function.method))
+(local_function_declaration (symbol (symbol) @type (identifier) @function))
+(local_function_declaration (symbol (identifier) @function))
 (destructor_declaration (identifier) @function)
 (creation_method_declaration (symbol (symbol) @type (identifier) @constructor))
 (creation_method_declaration (symbol (identifier) @constructor))
