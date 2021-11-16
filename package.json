@@ -27,7 +27,8 @@
         "vala",
         "vapi"
       ],
-      "first-line-regex": "#!.*\\bvala$"
+      "first-line-regex": "#!.*\\bvala$",
+      "injection-regex": "^vala$"
     }
   ]
 }
