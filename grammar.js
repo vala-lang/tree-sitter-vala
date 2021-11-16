@@ -339,6 +339,7 @@ module.exports = grammar({
     ),
 
     type_declaration_modifier: $ => choice(
+      'partial',
       'abstract',
       'extern',
       'static'

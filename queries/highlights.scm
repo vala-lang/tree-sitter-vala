@@ -78,6 +78,7 @@
  "out"
  "override"
  "owned"
+ "partial"
  "private"
  "protected"
  "public"
