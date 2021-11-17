@@ -674,7 +674,8 @@ module.exports = grammar({
       $.delete_statement,
       $.throw_statement,
       $.yield_statement,
-      $.switch_statement
+      $.switch_statement,
+      $.with_statement
     ),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
@@ -788,6 +789,11 @@ module.exports = grammar({
       ),
       ':',
       repeat(choice($._statement, $.local_declaration))
+    ),
+
+    with_statement: $ => seq(
+      'with', '(', $._expression, ')',
+      $._statement
     ),
 
     // --- preprocessor

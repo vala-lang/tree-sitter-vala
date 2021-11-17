@@ -101,6 +101,7 @@
  "virtual"
  "weak"
  "while"
+ "with"
  "yield"
 ] @keyword
 
