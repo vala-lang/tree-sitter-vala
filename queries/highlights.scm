@@ -46,6 +46,7 @@
 
 [
  "abstract"
+ "and"
  "as"
  "async"
  "break"
@@ -77,6 +78,7 @@
  "namespace"
  "new"
  "not"
+ "or"
  "out"
  "override"
  "owned"
