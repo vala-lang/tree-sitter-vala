@@ -62,13 +62,12 @@ module.exports = grammar({
     ),
 
     _expression: $ => choice(
-        seq('(', $._expression, ')'),
         $._contained_expression,
         $.initializer,
         $.yield_expression,
         $.lambda_expression,
         $.static_cast_expression,
-        $.unary_expression,
+        $._unary_expression,
         $.multiplicative_expression,
         $.arithmetic_expression,
         $.in_expression,
@@ -89,6 +88,7 @@ module.exports = grammar({
 
     // expressions that never need to be wrapped in parentheses
     _contained_expression: $ => choice(
+        seq('(', $._expression, ')'),
         $.literal,
         $.array_creation_expression,
         $.object_creation_expression,
@@ -105,20 +105,14 @@ module.exports = grammar({
 
     member_access_expression: $ => seq(
       optional(seq(
-        choice(
-          $._contained_expression,
-          seq('(', $._expression, ')')
-        ),
+        $._contained_expression,
         choice('.', '?.', '->'),
       )),
       $.identifier
     ),
 
     element_access_expression: $ => seq(
-      choice(
-        $._contained_expression,
-        seq('(', $._expression, ')'),
-      ),
+      $._contained_expression,
       repeat1($.element_access)
     ),
 
@@ -167,7 +161,20 @@ module.exports = grammar({
     static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!', 'owned'), ')', $._expression)),
     typeof_expression: $ => prec.right(14, seq('typeof', '(', $.type, ')')),
     sizeof_expression: $ => prec.right(14, seq('sizeof', '(', $.type, ')')),
-    unary_expression: $ => prec.right(14, seq(choice('!', 'not', '~', '++', '--', '-', '*', '&'), $._expression)),
+    dereferencing_expression: $ => prec.right(14, seq('*', $._contained_expression)),
+    addressof_expression: $ => prec.right(14, seq('&', $._contained_expression)),
+    arithmetic_negation_expression: $ => prec.right(14, seq('-', $._contained_expression)),
+    prefix_expression: $ => prec.right(14, seq(choice('++', '--'), $._contained_expression)),
+    bitwise_negation_expression: $ => prec.right(14, seq('~', $._contained_expression)),
+    logical_negation_expression: $ => prec.right(14, seq(choice('!', 'not'), $._contained_expression)),
+    _unary_expression: $ => prec.right(14, choice(
+        $.dereferencing_expression,
+        $.addressof_expression,
+        $.arithmetic_negation_expression,
+        $.prefix_expression,
+        $.bitwise_negation_expression,
+        $.logical_negation_expression
+    )),
     multiplicative_expression: $ => prec.left(13, seq($._expression, choice('*', '/', '%'), $._expression)),
     arithmetic_expression: $ => prec.left(12, seq($._expression, choice('+', '-'), $._expression)),
     bitshift_expression: $ => prec.left(11, seq($._expression, choice('<<', '>>'), $._expression)),
@@ -637,18 +644,18 @@ module.exports = grammar({
 
     local_function_declaration: $ => seq(
         $.type,
-        $.symbol,
+        $.identifier,
         '(',
         optional(seq($.parameter, repeat(seq(',', $.parameter)))),
         ')',
         $.block
     ),
 
-    assignment: $ => seq(
+    assignment: $ => prec.dynamic(20, seq(
       $.identifier,
       optional($.inline_array_type),
       optional(seq('=', $._expression))
-    ),
+    )),
 
     block: $ => seq('{', repeat(choice($._statement, $.local_declaration, $.local_function_declaration)), '}'),
 
@@ -660,8 +667,8 @@ module.exports = grammar({
     // resolves ambiguities with 'else if'
     _statement_without_if: $ => choice(
       $.block,
-      ';',
-      seq($._expression, ';'),
+      $.empty_statement,
+      $.expression_statement,
       $.return_statement,
       $.try_statement,
       $.while_statement,
@@ -677,6 +684,10 @@ module.exports = grammar({
       $.switch_statement,
       $.with_statement
     ),
+
+    empty_statement: $ => ';',
+
+    expression_statement: $ => seq($._expression, ';'),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
 
