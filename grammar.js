@@ -8,14 +8,14 @@ module.exports = grammar({
 
     // taken from tree-sitter-c
     // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
-    comment: $ => token(choice(
+    comment: $ => token(prec(1, choice(
       seq('//', /(\\(.|\r?\n)|[^\\\n])*/),
       seq(
         '/*',
         /[^*]*\*+([^/*][^*]*\*+)*/,
         '/'
       )
-    )),
+    ))),
 
     using_directive: $ => seq(
       'using',
@@ -243,15 +243,15 @@ module.exports = grammar({
     regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
     string: $ => seq(
       '"',
-      repeat(choice(/[^"%\\]+/, $.escape_sequence, $.string_formatter, /%[^$#0\- +'I\d\\.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%]/)),
-      '"'
+      repeat(choice(token(prec(2, /[^"%\\]+/)), $.escape_sequence, $.string_formatter, /%[^$#0\- +'I\d\\.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%]/)),
+      token(prec(2, '"'))
     ),
     escape_sequence: $ => /\\([abefnrtv\\'"?]|[0-7]{3}|[xX][A-Fa-f0-9]{2}|[uU][A-Fa-f0-9]{4,8})/,
     string_formatter: $ => /%\$?[#0\- +'I]?\d*(\.\d+)?(hh?|ll?|q|L|j|z|Z|t)?[diouxXeEfFgGaAcsCSpnm%]/,
     template_string: $ => seq(
       '@"',
-      repeat(choice(/([^$"]+|\\")+/, $.template_string_expression, '$$')),
-      '"'
+      repeat(choice(token(prec(2, /([^$"]+|\\")+/)), $.template_string_expression, '$$')),
+      token(prec(2, '"'))
     ),
     template_string_expression: $ => choice(
       seq('$(', $._expression, ')'),
