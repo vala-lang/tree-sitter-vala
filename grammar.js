@@ -180,7 +180,7 @@ module.exports = grammar({
     bitshift_expression: $ => prec.left(11, seq($._expression, choice('<<', '>>'), $._expression)),
     in_expression: $ => prec.left(10, seq($._expression, optional('not'), 'in', $._expression)),
     dynamic_cast_expression: $ => prec.left(10, seq($._expression, 'as', $.type)),
-    type_relational_expression: $ => prec.left(10, seq($._expression, 'is', $.type)),
+    type_relational_expression: $ => prec.left(10, seq($._expression, 'is', optional('not'), $.type)),
     relational_expression: $ => prec.left(10, seq($._expression, choice('<', '<=', '>=', '>'), $._expression)),
     equality_expression: $ => prec.left(9, seq($._expression, choice('==', '!='), $._expression)),
     bitwise_and_expression: $ => prec.left(8, seq($._expression, '&', $._expression)),
