@@ -1,6 +1,6 @@
 ; highlights.scm
 
-; match constants
+; highlight constants
 (
   (identifier) @constant
   (#match? @constant "^[A-Z][A-Z_0-9]+$")
@@ -10,6 +10,8 @@
 
 (type (symbol . (identifier) @type))
 (type (symbol (symbol) @include (identifier) @type))
+
+; highlight creation methods in object creation expressions
 (
   (type (symbol (symbol (symbol)? @include (identifier) @type) (identifier) @constructor))
   (#match? @constructor "^[a-z][a-z_0-9]+$")
