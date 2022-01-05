@@ -243,11 +243,17 @@ module.exports = grammar({
     regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
     string: $ => seq(
       '"',
-      repeat(choice(token(prec(2, /[^"%\\]+/)), $.escape_sequence, $.string_formatter, /%[^$#0\- +'I\d\\.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%]/)),
+      repeat(choice(
+        token(prec(2, /[^"%\\]+/)),
+        $.escape_sequence,
+        /\\[^abefnrtv\\'"? xXuU]/,
+        $.string_formatter,
+        /%[^$#0\- +'I\d\\.hlqLjzZtdiouxXeEfFgGaAcsCSpnm%"]/
+      )),
       token(prec(2, '"'))
     ),
-    escape_sequence: $ => /\\([abefnrtv\\'"?]|[0-7]{3}|[xX][A-Fa-f0-9]{2}|[uU][A-Fa-f0-9]{4,8})/,
-    string_formatter: $ => /%\$?[#0\- +'I]?\d*(\.\d+)?(hh?|ll?|q|L|j|z|Z|t)?[diouxXeEfFgGaAcsCSpnm%]/,
+    escape_sequence: $ => /\\([abefnrtv\\'"? ]|[0-7]{3}|[xX][A-Fa-f0-9]{2}|[uU][A-Fa-f0-9]{4,8})/,
+    string_formatter: $ => /%\$?[#0\- +'I]?\d*(\.\d+)?(hh?|ll?|q|L|j|z|Z|t)?[diouxXeEfFgGaAcsCSpnm%]?/,
     template_string: $ => seq(
       '@"',
       repeat(choice(token(prec(2, /([^$"]+|\\")+/)), $.template_string_expression, '$$')),

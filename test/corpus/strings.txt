@@ -1,0 +1,66 @@
+=======
+Strings
+=======
+
+string x;
+string fmt;
+
+x = "hello, world";
+x = "hello, %s";
+x = "your name:\t %s";
+x = "the time: %" + fmt;
+x = "location: C:\\Users";
+
+---
+
+(source_file
+ (namespace_member
+  (field_declaration
+   (type
+    (symbol
+     (identifier)))
+   (identifier)))
+ (namespace_member
+  (field_declaration
+   (type
+    (symbol
+     (identifier)))
+   (identifier)))
+ (expression_statement
+  (assignment_expression
+   (member_access_expression
+    (identifier))
+   (literal
+    (string))))
+ (expression_statement
+  (assignment_expression
+   (member_access_expression
+    (identifier))
+   (literal
+    (string
+     (string_formatter)))))
+ (expression_statement
+  (assignment_expression
+   (member_access_expression
+    (identifier))
+   (literal
+    (string
+     (escape_sequence)
+     (string_formatter)))))
+ (expression_statement
+  (assignment_expression
+   (member_access_expression
+    (identifier))
+   (arithmetic_expression
+    (literal
+     (string
+      (string_formatter)))
+    (member_access_expression
+     (identifier)))))
+ (expression_statement
+  (assignment_expression
+   (member_access_expression
+    (identifier))
+   (literal
+    (string
+     (escape_sequence))))))
