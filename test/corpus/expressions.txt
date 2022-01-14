@@ -10,6 +10,7 @@ void main() {
     (3 + 1).to_string();
     if (!yield x()) {
     }
+    10u + 10f + 10U + 10.F + 10e-3f;
 }
 
 ---
@@ -52,4 +53,21 @@ void main() {
               (method_call_expression
                 (member_access_expression
                   (identifier)))))
-          (block))))))
+          (block))
+            (expression_statement
+              (arithmetic_expression
+                (arithmetic_expression
+                  (arithmetic_expression
+                    (arithmetic_expression
+                      (literal
+                        (integer))
+                      (literal
+                        (real)))
+                    (literal
+                      (integer)))
+                  (member_access_expression
+                    (literal
+                      (integer))
+                    (identifier)))
+                (literal
+                  (real))))))))

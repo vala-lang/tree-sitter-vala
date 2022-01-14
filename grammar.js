@@ -248,9 +248,9 @@ module.exports = grammar({
 
     boolean: $ => choice('true', 'false'),
     character: $ => /'(\S+|\s)'/,
-    integer: $ => choice(/[1-9]\d*|0[0-7]*/, /0[xX][A-Fa-f0-9]+/),
+    integer: $ => choice(/([1-9]\d*|0[0-7]*)[UuLl]?/, /0[xX][A-Fa-f0-9]+/),
     null: $ => 'null',
-    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?f?/,
+    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?[Ff]?/,
     regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
     string: $ => seq(
       '"',
