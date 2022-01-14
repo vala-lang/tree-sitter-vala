@@ -103,6 +103,17 @@ module.exports = grammar({
         $.postfix_expression,
     ),
 
+    // expressions that are contained by an operator to the left
+    // for example:
+    // if (!yield x())
+    //      ^^^^^^^^^ -- we don't need parens here because of the '!' operator
+    _left_contained_expression: $ => choice(
+        $._contained_expression,
+        $.yield_expression,
+        $.static_cast_expression,
+        $._unary_expression
+    ),
+
     member_access_expression: $ => seq(
       optional(seq(
         $._contained_expression,
@@ -161,12 +172,12 @@ module.exports = grammar({
     static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!', 'owned'), ')', $._expression)),
     typeof_expression: $ => prec.right(14, seq('typeof', '(', $.type, ')')),
     sizeof_expression: $ => prec.right(14, seq('sizeof', '(', $.type, ')')),
-    dereferencing_expression: $ => prec.right(14, seq('*', $._contained_expression)),
-    addressof_expression: $ => prec.right(14, seq('&', $._contained_expression)),
-    arithmetic_negation_expression: $ => prec.right(14, seq('-', $._contained_expression)),
-    prefix_expression: $ => prec.right(14, seq(choice('++', '--'), $._contained_expression)),
-    bitwise_negation_expression: $ => prec.right(14, seq('~', $._contained_expression)),
-    logical_negation_expression: $ => prec.right(14, seq(choice('!', 'not'), $._contained_expression)),
+    dereferencing_expression: $ => prec.right(14, seq('*', $._left_contained_expression)),
+    addressof_expression: $ => prec.right(14, seq('&', $._left_contained_expression)),
+    arithmetic_negation_expression: $ => prec.right(14, seq('-', $._left_contained_expression)),
+    prefix_expression: $ => prec.right(14, seq(choice('++', '--'), $._left_contained_expression)),
+    bitwise_negation_expression: $ => prec.right(14, seq('~', $._left_contained_expression)),
+    logical_negation_expression: $ => prec.right(14, seq(choice('!', 'not'), $._left_contained_expression)),
     _unary_expression: $ => prec.right(14, choice(
         $.dereferencing_expression,
         $.addressof_expression,
@@ -881,7 +892,8 @@ module.exports = grammar({
     [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
     [$.element_access_expression],                                      // for ambiguity because of contained expressions
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
-    [$.if_statement]                                                    // because of ambiguity with nested if statements
+    [$.if_statement],                                                   // because of ambiguity with nested if statements
+    [$._expression, $._left_contained_expression]
   ],
 
   extras: $ => [

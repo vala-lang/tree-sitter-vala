@@ -8,6 +8,8 @@ void main() {
     3 = 3;
     x.y.z();
     (3 + 1).to_string();
+    if (!yield x()) {
+    }
 }
 
 ---
@@ -43,4 +45,11 @@ void main() {
               (arithmetic_expression
                 (literal (integer))
                 (literal (integer)))
-              (identifier))))))))
+              (identifier))))
+        (if_statement
+          (logical_negation_expression
+            (yield_expression
+              (method_call_expression
+                (member_access_expression
+                  (identifier)))))
+          (block))))))
