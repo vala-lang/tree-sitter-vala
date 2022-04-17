@@ -2,19 +2,23 @@
 
 ; highlight constants
 (
-  (identifier) @constant
-  (#match? @constant "^[A-Z][A-Z_0-9]+$")
+  (member_access_expression (identifier) @constant)
+  (#match? @constant "^[A-Z][A-Z_0-9]*$")
+)
+
+(
+  (member_access_expression (member_access_expression) @include (identifier) @constant)
+  (#match? @constant "^[A-Z][A-Z_0-9]*$")
 )
 
 (comment) @comment
 
-(type (symbol . (identifier) @type))
-(type (symbol (symbol) @include (identifier) @type))
+(type (symbol (_)? @include (identifier) @type))
 
 ; highlight creation methods in object creation expressions
 (
-  (type (symbol (symbol (symbol)? @include (identifier) @type) (identifier) @constructor))
-  (#match? @constructor "^[a-z][a-z_0-9]+$")
+  (object_creation_expression (type (symbol (symbol (symbol)? @include (identifier) @type) (identifier) @constructor)))
+  (#match? @constructor "^[a-z][a-z_0-9]*$")
 )
 
 (unqualified_type (symbol . (identifier) @type))
