@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Prince781/tree-sitter-vala.git"
+    "url": "git+https://github.com/vala-lang/tree-sitter-vala.git"
   },
   "keywords": [
     "tree-sitter",
@@ -17,9 +17,9 @@
   "author": "Princeton Ferro",
   "license": "LGPL-2.1-only",
   "bugs": {
-    "url": "https://github.com/Prince781/tree-sitter-vala/issues"
+    "url": "https://github.com/vala-lang/tree-sitter-vala/issues"
   },
-  "homepage": "https://github.com/Prince781/tree-sitter-vala#readme",
+  "homepage": "https://github.com/vala-lang/tree-sitter-vala#readme",
   "tree-sitter": [
     {
       "scope": "source.vala",
