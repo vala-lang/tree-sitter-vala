@@ -37,8 +37,8 @@
 (errorcode (identifier) @constant)
 (constant_declaration (identifier) @constant)
 (method_call_expression (member_access_expression (identifier) @function))
-(lambda_expression (identifier) @variable.parameter)
-(parameter (identifier) @variable.parameter)
+(lambda_expression (identifier) @parameter)
+(parameter (identifier) @parameter)
 (property_declaration (symbol (identifier) @property))
 (field_declaration (identifier) @field)
 [
