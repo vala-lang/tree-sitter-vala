@@ -65,6 +65,15 @@
  "void"
 ] @type.builtin
 
+(if_directive
+  expression: (_) @preproc
+) @keyword
+(elif_directive
+  expression: (_) @preproc
+) @keyword
+(else_directive) @keyword
+(endif_directive) @keyword
+
 [
  "abstract"
  "async"
