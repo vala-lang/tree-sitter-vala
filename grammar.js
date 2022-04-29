@@ -838,9 +838,9 @@ module.exports = grammar({
       )
     ),
 
-    if_directive: $ => seq('if', $._preprocessor_expression),
+    if_directive: $ => seq('if', field('expression', $._preprocessor_expression)),
 
-    elif_directive: $ => seq('elif', $._preprocessor_expression),
+    elif_directive: $ => seq('elif', field('expression', $._preprocessor_expression)),
 
     else_directive: $ => 'else',
 
