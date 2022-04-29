@@ -27,6 +27,8 @@
         "vala",
         "vapi"
       ],
+      "highlights": ["queries/highlights.scm"],
+      "locals": ["queries/locals.scm"],
       "first-line-regex": "#!.*\\bvala$",
       "injection-regex": "^vala$"
     }
