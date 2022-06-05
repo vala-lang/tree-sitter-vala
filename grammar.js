@@ -847,10 +847,19 @@ module.exports = grammar({
     endif_directive: $ => 'endif',
 
     _preprocessor_expression: $ => choice(
-      seq('(', $._preprocessor_expression, ')'),
+      seq('(', $._preprocessor_contained_expression, ')'),
       $.identifier,
       $.literal
-      // TODO: more preproc expressions
+    ),
+
+    _preprocessor_contained_expression: $ => choice(
+      seq('(', $._preprocessor_contained_expression, ')'),
+      $.identifier,
+      $.literal,
+      prec.right(4, seq('!', $._preprocessor_expression)),
+      prec.left(3, seq($._preprocessor_expression, choice('==', '!='), $._preprocessor_expression)),
+      prec.left(2, seq($._preprocessor_expression, '&&', $._preprocessor_expression)),
+      prec.left(1, seq($._preprocessor_expression, '||', $._preprocessor_expression)),
     )
   },
 

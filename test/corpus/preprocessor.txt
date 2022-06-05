@@ -1,0 +1,45 @@
+============
+Preprocessor
+============
+
+#if (WINDOWS || MACOSX)
+int x = 0;
+#elif SOLARIS
+int x = 1;
+#else
+int x = 2;
+#endif
+
+---
+(source_file
+ (if_directive
+  (identifier)
+  (identifier))
+ (namespace_member
+  (field_declaration
+   (type
+    (symbol
+     (identifier)))
+   (identifier)
+   (literal
+    (integer))))
+ (elif_directive
+  (identifier))
+ (namespace_member
+  (field_declaration
+   (type
+    (symbol
+     (identifier)))
+   (identifier)
+   (literal
+    (integer))))
+ (else_directive)
+ (namespace_member
+  (field_declaration
+   (type
+    (symbol
+     (identifier)))
+   (identifier)
+   (literal
+    (integer))))
+(endif_directive))
