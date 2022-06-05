@@ -32,7 +32,7 @@ module.exports = grammar({
     identifier: $ => /[@A-Za-z_]\w*/,
 
     namespace_member: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       choice(
         $.namespace_declaration,
         $.class_declaration,
@@ -48,11 +48,16 @@ module.exports = grammar({
       )
     ),
 
-    attribute: $ => seq(
+    _attribute_list: $ => seq(
       '[',
-      $.identifier,
-      optional(seq('(', $.attribute_argument, repeat(seq(',', $.attribute_argument)), ')')),
+      $.attribute,
+      repeat(seq(',', $.attribute)),
       ']'
+    ),
+
+    attribute: $ => seq(
+      $.identifier,
+      optional(seq('(', $.attribute_argument, repeat(seq(',', $.attribute_argument)), ')'))
     ),
 
     attribute_argument: $ => seq(
@@ -381,7 +386,7 @@ module.exports = grammar({
     ),
 
     class_member: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       choice(
         $.class_declaration,
         $.interface_declaration,
@@ -411,7 +416,7 @@ module.exports = grammar({
     ),
 
     interface_member: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       choice(
         $.class_declaration,
         $.interface_declaration,
@@ -438,7 +443,7 @@ module.exports = grammar({
     ),
 
     struct_member: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       choice(
         $.method_declaration,
         $.creation_method_declaration,
@@ -459,7 +464,7 @@ module.exports = grammar({
       optional(choice(
         ',',    // support trailing ','
         seq(';', repeat(seq(
-          repeat($.attribute),
+          repeat($._attribute_list),
           choice($.method_declaration, $.constant_declaration)
         )))
       )),
@@ -467,7 +472,7 @@ module.exports = grammar({
     ),
 
     enum_value: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       $.identifier,
       optional(seq('=', $._expression))
     ),
@@ -482,19 +487,19 @@ module.exports = grammar({
       repeat(seq(',', $.errorcode)),
       optional(choice(
         ',',    // support trailing ','
-        seq(';', repeat(seq(repeat($.attribute), $.method_declaration)))
+        seq(';', repeat(seq(repeat($._attribute_list), $.method_declaration)))
       )),
       '}'
     ),
 
     errorcode: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       $.identifier,
       optional(seq('=', $._expression))
     ),
 
     parameter: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       choice(
         seq(
           optional('params'),
@@ -617,7 +622,7 @@ module.exports = grammar({
     property_default: $ => seq('default', '=', $._expression, ';'),
 
     property_accessor: $ => seq(
-      repeat($.attribute),
+      repeat($._attribute_list),
       optional($.access_modifier),
       choice(
         seq(optional('owned'), 'get'),
