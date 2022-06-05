@@ -3,7 +3,7 @@ Attributes
 ==========
 
 [Annotation]
-[GIR (name = "attrs", some_property = false)]
+[GIR (name = "attrs", some_property = false), PrintfFormat]
 namespace Attributes {
 }
 
@@ -18,5 +18,6 @@ namespace Attributes {
       (attribute_argument
         (identifier)
         (literal (boolean))))
+    (attribute (identifier))
     (namespace_declaration
       (symbol (identifier)))))
