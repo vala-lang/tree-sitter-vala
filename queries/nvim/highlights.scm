@@ -1,5 +1,10 @@
 ; highlights.scm
 
+; higlight comments and symbols
+(comment) @comment
+(symbol) @symbol
+(member_access_expression (_) (identifier) @symbol)
+
 ; highlight constants
 (
   (member_access_expression (identifier) @constant)
@@ -11,9 +16,12 @@
   (#match? @constant "^[A-Z][A-Z_0-9]*$")
 )
 
-(comment) @comment
-
+; highlight types and probable types
 (type (symbol (_)? @namespace (identifier) @type))
+(
+  (member_access_expression . (identifier) @type)
+  (#match? @type "^[A-Z][A-Za-z_0-9]{2,}$")
+)
 
 ; highlight creation methods in object creation expressions
 (
@@ -28,6 +36,7 @@
 (namespace_declaration (symbol) @namespace)
 (method_declaration (symbol (symbol) @type (identifier) @function))
 (method_declaration (symbol (identifier) @function))
+(local_declaration (assignment (identifier) @variable))
 (local_function_declaration (identifier) @function)
 (destructor_declaration (identifier) @function)
 (creation_method_declaration (symbol (symbol) @type (identifier) @constructor))
@@ -39,15 +48,10 @@
 (errorcode (identifier) @constant)
 (constant_declaration (identifier) @constant)
 (method_call_expression (member_access_expression (identifier) @function))
-; highlight special methods
-(
- (method_call_expression (member_access_expression (identifier) @function.builtin))
- (#match? @function.builtin "exit")
-)
 ; highlight macros
 (
  (method_call_expression (member_access_expression (identifier) @function.macro))
- (#match? @function.macro "^(assert|error|info|print|warning(_once)?)$")
+ (#match? @function.macro "^assert[A-Za-z_0-9]*$" "error" "info" "debug" "print" "warning" "warning_once")
 )
 (lambda_expression (identifier) @parameter)
 (parameter (identifier) @parameter)
@@ -57,7 +61,7 @@
  (this_access)
  (base_access)
  (value_access)
-] @variable.builtin
+] @constant.builtin
 (boolean) @boolean
 (character) @character
 (escape_sequence) @character.special
