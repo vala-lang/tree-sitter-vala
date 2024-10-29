@@ -31,7 +31,7 @@ Plug 'vala-lang/vala.vim'
 Then install with
 
 ```
-:Plugupdate
+:PlugUpdate
 ```
 
 For other plugin mangers consider the install steps will be different.
