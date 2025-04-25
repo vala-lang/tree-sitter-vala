@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "vala",
   "word": "identifier",
   "rules": {
@@ -1945,7 +1946,7 @@
     },
     "regex": {
       "type": "PATTERN",
-      "value": "\\/([^\\\\\\/\\n]|\\\\[\\\\\\/A-z0|\\[\\]^$?.(){}+\\-*])+\\/[gmxsu]*"
+      "value": "\\/([^\\\\\\/\\n]|\\\\[\\\\\\/A-z0|\\[\\]^$?.(){}+\\-*])+\\/[imsxo]*"
     },
     "string": {
       "type": "SEQ",
@@ -2093,8 +2094,37 @@
       ]
     },
     "verbatim_string": {
-      "type": "PATTERN",
-      "value": "\"\"\"(.|\\n)*\"\"\""
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "\"\"\""
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "PATTERN",
+                "value": "[^\"]"
+              },
+              {
+                "type": "STRING",
+                "value": "\""
+              },
+              {
+                "type": "STRING",
+                "value": "\"\""
+              }
+            ]
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "\"\"\""
+        }
+      ]
     },
     "literal": {
       "type": "CHOICE",
@@ -2423,67 +2453,83 @@
         }
       ]
     },
-    "member_declaration_modifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "async"
-        },
-        {
-          "type": "STRING",
-          "value": "class"
-        },
-        {
-          "type": "STRING",
-          "value": "extern"
-        },
-        {
-          "type": "STRING",
-          "value": "inline"
-        },
-        {
-          "type": "STRING",
-          "value": "static"
-        },
-        {
-          "type": "STRING",
-          "value": "abstract"
-        },
-        {
-          "type": "STRING",
-          "value": "virtual"
-        },
-        {
-          "type": "STRING",
-          "value": "override"
-        },
-        {
-          "type": "STRING",
-          "value": "new"
-        }
-      ]
+    "modifier": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "abstract"
+          },
+          {
+            "type": "STRING",
+            "value": "async"
+          },
+          {
+            "type": "STRING",
+            "value": "class"
+          },
+          {
+            "type": "STRING",
+            "value": "extern"
+          },
+          {
+            "type": "STRING",
+            "value": "inline"
+          },
+          {
+            "type": "STRING",
+            "value": "new"
+          },
+          {
+            "type": "STRING",
+            "value": "override"
+          },
+          {
+            "type": "STRING",
+            "value": "partial"
+          },
+          {
+            "type": "STRING",
+            "value": "sealed"
+          },
+          {
+            "type": "STRING",
+            "value": "static"
+          },
+          {
+            "type": "STRING",
+            "value": "virtual"
+          }
+        ]
+      }
     },
     "access_modifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "private"
-        },
-        {
-          "type": "STRING",
-          "value": "protected"
-        },
-        {
-          "type": "STRING",
-          "value": "internal"
-        },
-        {
-          "type": "STRING",
-          "value": "public"
-        }
-      ]
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "private"
+          },
+          {
+            "type": "STRING",
+            "value": "protected"
+          },
+          {
+            "type": "STRING",
+            "value": "internal"
+          },
+          {
+            "type": "STRING",
+            "value": "public"
+          }
+        ]
+      }
     },
     "namespace_declaration": {
       "type": "SEQ",
@@ -2520,27 +2566,6 @@
         }
       ]
     },
-    "type_declaration_modifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "partial"
-        },
-        {
-          "type": "STRING",
-          "value": "abstract"
-        },
-        {
-          "type": "STRING",
-          "value": "extern"
-        },
-        {
-          "type": "STRING",
-          "value": "static"
-        }
-      ]
-    },
     "class_declaration": {
       "type": "SEQ",
       "members": [
@@ -2560,7 +2585,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "type_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -2713,7 +2738,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "type_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -2854,7 +2879,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "type_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -2975,7 +3000,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "type_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -3126,7 +3151,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "type_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -3368,7 +3393,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "member_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -3490,39 +3515,6 @@
         }
       ]
     },
-    "delegate_declaration_modifier": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "async"
-        },
-        {
-          "type": "STRING",
-          "value": "class"
-        },
-        {
-          "type": "STRING",
-          "value": "extern"
-        },
-        {
-          "type": "STRING",
-          "value": "inline"
-        },
-        {
-          "type": "STRING",
-          "value": "abstract"
-        },
-        {
-          "type": "STRING",
-          "value": "virtual"
-        },
-        {
-          "type": "STRING",
-          "value": "override"
-        }
-      ]
-    },
     "delegate_declaration": {
       "type": "SEQ",
       "members": [
@@ -3542,7 +3534,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "delegate_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -3656,7 +3648,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "member_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -3794,39 +3786,6 @@
         }
       ]
     },
-    "signal_declaration_modifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "async"
-        },
-        {
-          "type": "STRING",
-          "value": "extern"
-        },
-        {
-          "type": "STRING",
-          "value": "inline"
-        },
-        {
-          "type": "STRING",
-          "value": "abstract"
-        },
-        {
-          "type": "STRING",
-          "value": "virtual"
-        },
-        {
-          "type": "STRING",
-          "value": "override"
-        },
-        {
-          "type": "STRING",
-          "value": "new"
-        }
-      ]
-    },
     "signal_declaration": {
       "type": "SEQ",
       "members": [
@@ -3846,7 +3805,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "signal_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -3936,7 +3895,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "member_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -4005,7 +3964,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "member_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -4070,8 +4029,29 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "_expression"
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                },
+                {
+                  "type": "REPEAT",
+                  "content": {
+                    "type": "SEQ",
+                    "members": [
+                      {
+                        "type": "STRING",
+                        "value": ","
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "_expression"
+                      }
+                    ]
+                  }
+                }
+              ]
             },
             {
               "type": "BLANK"
@@ -4103,7 +4083,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "member_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -4291,43 +4271,6 @@
         }
       ]
     },
-    "constructor_declaration_modifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "async"
-        },
-        {
-          "type": "STRING",
-          "value": "class"
-        },
-        {
-          "type": "STRING",
-          "value": "extern"
-        },
-        {
-          "type": "STRING",
-          "value": "inline"
-        },
-        {
-          "type": "STRING",
-          "value": "static"
-        },
-        {
-          "type": "STRING",
-          "value": "abstract"
-        },
-        {
-          "type": "STRING",
-          "value": "virtual"
-        },
-        {
-          "type": "STRING",
-          "value": "override"
-        }
-      ]
-    },
     "constructor_declaration": {
       "type": "SEQ",
       "members": [
@@ -4335,7 +4278,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "constructor_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -4355,7 +4298,7 @@
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
-            "name": "constructor_declaration_modifier"
+            "name": "modifier"
           }
         },
         {
@@ -5519,65 +5462,6 @@
   ],
   "conflicts": [
     [
-      "member_declaration_modifier",
-      "class_declaration"
-    ],
-    [
-      "member_declaration_modifier",
-      "type_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "object_creation_expression"
-    ],
-    [
-      "member_declaration_modifier",
-      "signal_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "type_declaration_modifier",
-      "signal_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "delegate_declaration_modifier"
-    ],
-    [
-      "array_creation_expression",
-      "member_declaration_modifier"
-    ],
-    [
-      "array_creation_expression",
-      "object_creation_expression",
-      "member_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "delegate_declaration_modifier",
-      "constructor_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "signal_declaration_modifier",
-      "constructor_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "constructor_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "type_declaration_modifier",
-      "constructor_declaration_modifier"
-    ],
-    [
-      "member_declaration_modifier",
-      "type_declaration_modifier",
-      "signal_declaration_modifier",
-      "constructor_declaration_modifier"
-    ],
-    [
       "symbol",
       "member_access_expression"
     ],
@@ -5597,16 +5481,8 @@
       "type"
     ],
     [
-      "_expression",
-      "method_call_expression"
-    ],
-    [
       "_contained_expression",
       "method_call_expression"
-    ],
-    [
-      "_expression",
-      "element_access_expression"
     ],
     [
       "element_access_expression"
@@ -5628,4 +5504,3 @@
   "inline": [],
   "supertypes": []
 }
-

@@ -88,6 +88,7 @@
  "public"
  "ref"
  "return"
+ "sealed"
  "set"
  "signal"
  "sizeof"

@@ -67,45 +67,45 @@ module.exports = grammar({
     ),
 
     _expression: $ => choice(
-        $._contained_expression,
-        $.initializer,
-        $.yield_expression,
-        $.lambda_expression,
-        $.static_cast_expression,
-        $._unary_expression,
-        $.multiplicative_expression,
-        $.arithmetic_expression,
-        $.in_expression,
-        $.bitshift_expression,
-        $.dynamic_cast_expression,
-        $.type_relational_expression,
-        $.relational_expression,
-        $.equality_expression,
-        $.bitwise_and_expression,
-        $.bitwise_xor_expression,
-        $.bitwise_or_expression,
-        $.logical_and_expression,
-        $.logical_or_expression,
-        $.null_coalescing_expression,
-        $.ternary_expression,
-        $.assignment_expression
+      $._contained_expression,
+      $.initializer,
+      $.yield_expression,
+      $.lambda_expression,
+      $.static_cast_expression,
+      $._unary_expression,
+      $.multiplicative_expression,
+      $.arithmetic_expression,
+      $.in_expression,
+      $.bitshift_expression,
+      $.dynamic_cast_expression,
+      $.type_relational_expression,
+      $.relational_expression,
+      $.equality_expression,
+      $.bitwise_and_expression,
+      $.bitwise_xor_expression,
+      $.bitwise_or_expression,
+      $.logical_and_expression,
+      $.logical_or_expression,
+      $.null_coalescing_expression,
+      $.ternary_expression,
+      $.assignment_expression
     ),
 
     // expressions that never need to be wrapped in parentheses
     _contained_expression: $ => choice(
-        seq('(', $._expression, ')'),
-        $.literal,
-        $.array_creation_expression,
-        $.object_creation_expression,
-        $.this_access,
-        $.base_access,
-        $.value_access,
-        $.member_access_expression,
-        $.element_access_expression,
-        $.method_call_expression,
-        $.sizeof_expression,
-        $.typeof_expression,
-        $.postfix_expression,
+      seq('(', $._expression, ')'),
+      $.literal,
+      $.array_creation_expression,
+      $.object_creation_expression,
+      $.this_access,
+      $.base_access,
+      $.value_access,
+      $.member_access_expression,
+      $.element_access_expression,
+      $.method_call_expression,
+      $.sizeof_expression,
+      $.typeof_expression,
+      $.postfix_expression,
     ),
 
     // expressions that are contained by an operator to the left
@@ -113,10 +113,10 @@ module.exports = grammar({
     // if (!yield x())
     //      ^^^^^^^^^ -- we don't need parens here because of the '!' operator
     _left_contained_expression: $ => choice(
-        $._contained_expression,
-        $.yield_expression,
-        $.static_cast_expression,
-        $._unary_expression
+      $._contained_expression,
+      $.yield_expression,
+      $.static_cast_expression,
+      $._unary_expression
     ),
 
     member_access_expression: $ => seq(
@@ -184,12 +184,12 @@ module.exports = grammar({
     bitwise_negation_expression: $ => prec.right(14, seq('~', $._left_contained_expression)),
     logical_negation_expression: $ => prec.right(14, seq(choice('!', 'not'), $._left_contained_expression)),
     _unary_expression: $ => prec.right(14, choice(
-        $.dereferencing_expression,
-        $.addressof_expression,
-        $.arithmetic_negation_expression,
-        $.prefix_expression,
-        $.bitwise_negation_expression,
-        $.logical_negation_expression
+      $.dereferencing_expression,
+      $.addressof_expression,
+      $.arithmetic_negation_expression,
+      $.prefix_expression,
+      $.bitwise_negation_expression,
+      $.logical_negation_expression
     )),
     multiplicative_expression: $ => prec.left(13, seq($._expression, choice('*', '/', '%'), $._expression)),
     arithmetic_expression: $ => prec.left(12, seq($._expression, choice('+', '-'), $._expression)),
@@ -279,7 +279,7 @@ module.exports = grammar({
       seq('$(', $._expression, ')'),
       seq('$', $.identifier)
     ),
-    verbatim_string: $=> seq(
+    verbatim_string: $ => seq(
       '"""',
       repeat(choice(
         /[^"]/,
@@ -290,15 +290,15 @@ module.exports = grammar({
     ),
 
     literal: $ => choice(
-        $.boolean,
-        $.null,
-        $.character,
-        $.integer,
-        $.real,
-        $.regex,
-        $.string,
-        $.template_string,
-        $.verbatim_string
+      $.boolean,
+      $.null,
+      $.character,
+      $.integer,
+      $.real,
+      $.regex,
+      $.string,
+      $.template_string,
+      $.verbatim_string
     ),
 
     type: $ => choice(
@@ -347,24 +347,26 @@ module.exports = grammar({
       repeat(seq(',', $._expression))
     ),
 
-    member_declaration_modifier: $ => choice(
+    modifier: $ => prec.right(choice(
+      'abstract',
       'async',
       'class',
       'extern',
       'inline',
-      'static',
-      'abstract',
-      'virtual',
+      'new',
       'override',
-      'new'
-    ),
-
-    access_modifier: $ => choice(
+      'partial',
+      'sealed',
+      'static',
+      'virtual',
+    )),
+    
+    access_modifier: $ => prec.right(choice(
       'private',
       'protected',
       'internal',
       'public'
-    ),
+    )),
 
     namespace_declaration: $ => seq(
       'namespace',
@@ -375,16 +377,9 @@ module.exports = grammar({
       '}'
     ),
 
-    type_declaration_modifier: $ => choice(
-      'partial',
-      'abstract',
-      'extern',
-      'static'
-    ),
-
     class_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.type_declaration_modifier),
+      repeat($.modifier),
       'class',
       $.unqualified_type,
       optional(seq(':', $.type, repeat(seq(',', $.type)))),
@@ -414,7 +409,7 @@ module.exports = grammar({
 
     interface_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.type_declaration_modifier),
+      repeat($.modifier),
       'interface',
       $.unqualified_type,
       optional(seq(':', $.type, repeat(seq(',', $.type)))),
@@ -441,7 +436,7 @@ module.exports = grammar({
 
     struct_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.type_declaration_modifier),
+      repeat($.modifier),
       'struct',
       $.unqualified_type,
       optional(seq(':', $.type, repeat(seq(',', $.type)))),
@@ -463,7 +458,7 @@ module.exports = grammar({
 
     enum_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.type_declaration_modifier),
+      repeat($.modifier),
       'enum',
       $.symbol,
       '{',
@@ -487,7 +482,7 @@ module.exports = grammar({
 
     errordomain_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.type_declaration_modifier),
+      repeat($.modifier),
       'errordomain',
       $.symbol,
       '{',
@@ -523,7 +518,7 @@ module.exports = grammar({
 
     creation_method_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      repeat($.modifier),
       $.symbol,
       '(',
       optional(seq($.parameter, repeat(seq(',', $.parameter)))),
@@ -533,19 +528,9 @@ module.exports = grammar({
       choice($.block, ';')
     ),
 
-    delegate_declaration_modifier: $ => seq(
-      'async',
-      'class',
-      'extern',
-      'inline',
-      'abstract',
-      'virtual',
-      'override'
-    ),
-
     delegate_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.delegate_declaration_modifier),
+      repeat($.modifier),
       'delegate',
       $.type,
       $.symbol,
@@ -556,10 +541,10 @@ module.exports = grammar({
       optional(seq('throws', $.type)),
       ';'
     ),
-
+    
     method_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      repeat($.modifier),
       $.type,
       $.symbol,
       optional($.type_arguments),
@@ -571,19 +556,9 @@ module.exports = grammar({
       choice($.block, ';')
     ),
 
-    signal_declaration_modifier: $ => choice(
-      'async',
-      'extern',
-      'inline',
-      'abstract',
-      'virtual',
-      'override',
-      'new'
-    ),
-
     signal_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.signal_declaration_modifier),
+      repeat($.modifier),
       'signal',
       $.type,
       $.symbol,
@@ -595,7 +570,7 @@ module.exports = grammar({
 
     field_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      repeat($.modifier),
       $.type,
       $.identifier,
       optional($.inline_array_type),
@@ -605,7 +580,7 @@ module.exports = grammar({
 
     constant_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      repeat($.modifier),
       'const',
       $.type,
       $.identifier,
@@ -614,11 +589,17 @@ module.exports = grammar({
       ';'
     ),
 
-    inline_array_type: $ => seq('[', optional($._expression), ']'),
+    inline_array_type: $ => seq(
+      '[',
+      optional(
+        seq($._expression, repeat(seq(',', $._expression)))
+      ), 
+      ']'
+    ),
     
     property_declaration: $ => seq(
       optional($.access_modifier),
-      repeat($.member_declaration_modifier),
+      repeat($.modifier),
       $.type,
       $.symbol,
       '{',
@@ -640,25 +621,14 @@ module.exports = grammar({
       choice(';', $.block)
     ),
 
-    constructor_declaration_modifier: $ => choice(
-      'async',
-      'class',
-      'extern',
-      'inline',
-      'static',
-      'abstract',
-      'virtual',
-      'override'
-    ),
-
     constructor_declaration: $ => seq(
-      repeat($.constructor_declaration_modifier),
+      repeat($.modifier),
       'construct',
       $.block
     ),
 
     destructor_declaration: $ => seq(
-      repeat($.constructor_declaration_modifier),
+      repeat($.modifier),
       '~',
       $.identifier,
       '(', ')',
@@ -877,41 +847,12 @@ module.exports = grammar({
   },
 
   conflicts: $ => [
-    [$.member_declaration_modifier, $.class_declaration],               // because both can start with 'class'
-    [$.member_declaration_modifier, $.type_declaration_modifier],       // because both share 'extern'
-    [$.member_declaration_modifier, $.object_creation_expression],      // because OCEs can appear in the main block
-    [$.member_declaration_modifier, $.signal_declaration_modifier],     // both can start with 'new'
-    [$.member_declaration_modifier,
-     $.type_declaration_modifier,
-     $.signal_declaration_modifier],                                    // ambiguity between all three
-    [$.member_declaration_modifier, $.delegate_declaration_modifier],   // both can start with 'new'
-    [$.array_creation_expression, $.member_declaration_modifier],       // because both can start with 'new ('
-    [$.array_creation_expression,
-     $.object_creation_expression,
-     $.member_declaration_modifier],                                    // because these all start with 'new'
-    [$.member_declaration_modifier,
-     $.delegate_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these all start with 'class'
-    [$.member_declaration_modifier,
-     $.signal_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these all start with 'class'
-    [$.member_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these start with 'class'
-    [$.member_declaration_modifier,
-     $.type_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these start with 'class'
-    [$.member_declaration_modifier,
-     $.type_declaration_modifier,
-     $.signal_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these start with 'class'
     [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
     [$.symbol, $.member_access_expression, $.lambda_expression],        // head of lambda expression may be head of symbol or MA
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
     [$.symbol, $.type],                                                 // for object creation expression
-    [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
     [$._contained_expression, $.method_call_expression],                // for ambiguity because of contained expressions
-    [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
     [$.element_access_expression],                                      // for ambiguity because of contained expressions
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
     [$.if_statement],                                                   // because of ambiguity with nested if statements

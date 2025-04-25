@@ -1,0 +1,27 @@
+{
+  "grammars": [
+    {
+      "name": "vala",
+      "camelcase": "Vala",
+      "scope": "source.vala",
+      "path": ".",
+      "file-types": [
+        "vala",
+        "vapi"
+      ],
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0"
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true
+  }
+}

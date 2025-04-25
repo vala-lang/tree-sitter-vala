@@ -2337,11 +2337,11 @@
           "named": true
         },
         {
-          "type": "type",
+          "type": "modifier",
           "named": true
         },
         {
-          "type": "type_declaration_modifier",
+          "type": "type",
           "named": true
         },
         {
@@ -2531,11 +2531,11 @@
           "named": true
         },
         {
-          "type": "member_declaration_modifier",
+          "type": "method_call_expression",
           "named": true
         },
         {
-          "type": "method_call_expression",
+          "type": "modifier",
           "named": true
         },
         {
@@ -2614,16 +2614,11 @@
           "named": true
         },
         {
-          "type": "constructor_declaration_modifier",
+          "type": "modifier",
           "named": true
         }
       ]
     }
-  },
-  {
-    "type": "constructor_declaration_modifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "continue_statement",
@@ -2739,11 +2734,11 @@
           "named": true
         },
         {
-          "type": "member_declaration_modifier",
+          "type": "method_call_expression",
           "named": true
         },
         {
-          "type": "method_call_expression",
+          "type": "modifier",
           "named": true
         },
         {
@@ -2830,7 +2825,7 @@
           "named": true
         },
         {
-          "type": "delegate_declaration_modifier",
+          "type": "modifier",
           "named": true
         },
         {
@@ -2851,11 +2846,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "delegate_declaration_modifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "delete_statement",
@@ -3196,11 +3186,11 @@
           "named": true
         },
         {
-          "type": "constructor_declaration_modifier",
+          "type": "identifier",
           "named": true
         },
         {
-          "type": "identifier",
+          "type": "modifier",
           "named": true
         }
       ]
@@ -4343,11 +4333,11 @@
           "named": true
         },
         {
-          "type": "symbol",
+          "type": "modifier",
           "named": true
         },
         {
-          "type": "type_declaration_modifier",
+          "type": "symbol",
           "named": true
         }
       ]
@@ -4883,11 +4873,11 @@
           "named": true
         },
         {
-          "type": "symbol",
+          "type": "modifier",
           "named": true
         },
         {
-          "type": "type_declaration_modifier",
+          "type": "symbol",
           "named": true
         }
       ]
@@ -5169,11 +5159,11 @@
           "named": true
         },
         {
-          "type": "member_declaration_modifier",
+          "type": "method_call_expression",
           "named": true
         },
         {
-          "type": "method_call_expression",
+          "type": "modifier",
           "named": true
         },
         {
@@ -6210,7 +6200,7 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
         {
@@ -6390,11 +6380,11 @@
           "named": true
         },
         {
-          "type": "type",
+          "type": "modifier",
           "named": true
         },
         {
-          "type": "type_declaration_modifier",
+          "type": "type",
           "named": true
         },
         {
@@ -7615,11 +7605,6 @@
     }
   },
   {
-    "type": "member_declaration_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "member_initializer",
     "named": true,
     "fields": {},
@@ -8066,11 +8051,11 @@
           "named": true
         },
         {
-          "type": "member_declaration_modifier",
+          "type": "method_call_expression",
           "named": true
         },
         {
-          "type": "method_call_expression",
+          "type": "modifier",
           "named": true
         },
         {
@@ -8147,6 +8132,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "modifier",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "multiplicative_expression",
@@ -9139,7 +9129,7 @@
           "named": true
         },
         {
-          "type": "member_declaration_modifier",
+          "type": "modifier",
           "named": true
         },
         {
@@ -9667,11 +9657,11 @@
           "named": true
         },
         {
-          "type": "parameter",
+          "type": "modifier",
           "named": true
         },
         {
-          "type": "signal_declaration_modifier",
+          "type": "parameter",
           "named": true
         },
         {
@@ -9684,11 +9674,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "signal_declaration_modifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "sizeof_expression",
@@ -9871,6 +9856,7 @@
   {
     "type": "source_file",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -10158,15 +10144,15 @@
           "named": true
         },
         {
+          "type": "modifier",
+          "named": true
+        },
+        {
           "type": "struct_member",
           "named": true
         },
         {
           "type": "type",
-          "named": true
-        },
-        {
-          "type": "type_declaration_modifier",
           "named": true
         },
         {
@@ -11210,11 +11196,6 @@
     }
   },
   {
-    "type": "type_declaration_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "type_relational_expression",
     "named": true,
     "fields": {},
@@ -11429,6 +11410,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "verbatim_string",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "while_statement",
@@ -12239,6 +12225,14 @@
     "named": false
   },
   {
+    "type": "\"\"",
+    "named": false
+  },
+  {
+    "type": "\"\"\"",
+    "named": false
+  },
+  {
     "type": "$",
     "named": false
   },
@@ -12655,6 +12649,10 @@
     "named": false
   },
   {
+    "type": "sealed",
+    "named": false
+  },
+  {
     "type": "set",
     "named": false
   },
@@ -12721,10 +12719,6 @@
   {
     "type": "var",
     "named": false
-  },
-  {
-    "type": "verbatim_string",
-    "named": true
   },
   {
     "type": "virtual",
