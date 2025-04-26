@@ -279,7 +279,13 @@ module.exports = grammar({
       seq('$(', $._expression, ')'),
       seq('$', $.identifier)
     ),
-    verbatim_string: $=> /"""(.|\n)*"""/,
+    verbatim_string: $=> seq(
+      '"""',
+      repeat(
+        /(.|\n)/,
+      ),
+      '"""'
+    ),
 
     literal: $ => choice(
         $.boolean,
