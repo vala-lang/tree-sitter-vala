@@ -9,7 +9,7 @@ project(tree-sitter-vala
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 option(TREE_SITTER_REUSE_ALLOCATOR "Reuse the library allocator" OFF)
 
-set(TREE_SITTER_ABI_VERSION 15 CACHE STRING "Tree-sitter ABI version")
+set(TREE_SITTER_ABI_VERSION 13 CACHE STRING "Tree-sitter ABI version")
 if(NOT ${TREE_SITTER_ABI_VERSION} MATCHES "^[0-9]+$")
     unset(TREE_SITTER_ABI_VERSION CACHE)
     message(FATAL_ERROR "TREE_SITTER_ABI_VERSION must be an integer")
@@ -17,24 +17,15 @@ endif()
 
 include(GNUInstallDirs)
 
-find_program(TREE_SITTER_CLI tree-sitter DOC "Tree-sitter CLI")
+find_program(TREE_SITTER_CLI tree-sitter
+             HINTS "${CMAKE_CURRENT_SOURCE_DIR}/node_modules/.bin"
+             DOC "Tree-sitter CLI (0.24.7 supports ABI 13)")
 
-add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/grammar.json"
-                          "${CMAKE_CURRENT_SOURCE_DIR}/src/node-types.json"
-                   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/grammar.js"
-                   COMMAND "${TREE_SITTER_CLI}" generate grammar.js --no-parser
+add_custom_target(ts-generate
+                   COMMAND "${TREE_SITTER_CLI}" generate grammar.js
+                           --abi=${TREE_SITTER_ABI_VERSION}
                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-                   COMMENT "Generating grammar.json")
-
-add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.c"
-                   BYPRODUCTS "${CMAKE_CURRENT_SOURCE_DIR}/src/tree_sitter/parser.h"
-                              "${CMAKE_CURRENT_SOURCE_DIR}/src/tree_sitter/alloc.h"
-                              "${CMAKE_CURRENT_SOURCE_DIR}/src/tree_sitter/array.h"
-                   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/grammar.json"
-                   COMMAND "${TREE_SITTER_CLI}" generate src/grammar.json
-                            --abi=${TREE_SITTER_ABI_VERSION}
-                   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-                   COMMENT "Generating parser.c")
+                   COMMENT "Regenerating the parser (requires CLI 0.24.7)")
 
 add_library(tree-sitter-vala src/parser.c)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner.c)

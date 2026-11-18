@@ -7,6 +7,7 @@ DESCRIPTION := Vala grammar for tree-sitter
 SRC_DIR := src
 
 TS ?= tree-sitter
+TREE_SITTER_ABI_VERSION ?= 13
 
 # install directory layout
 PREFIX ?= /usr/local
@@ -73,11 +74,8 @@ $(LANGUAGE_NAME).pc: bindings/c/$(LANGUAGE_NAME).pc.in
 		-e 's|@PROJECT_HOMEPAGE_URL@|$(HOMEPAGE_URL)|' \
 		-e 's|@CMAKE_INSTALL_PREFIX@|$(PREFIX)|' $< > $@
 
-$(SRC_DIR)/grammar.json: grammar.js
-	$(TS) generate --no-parser $^
-
-$(PARSER): $(SRC_DIR)/grammar.json
-	$(TS) generate $^
+generate:
+	$(TS) generate --abi $(TREE_SITTER_ABI_VERSION) grammar.js
 
 install: all
 	install -d '$(DESTDIR)$(DATADIR)'/tree-sitter/queries/vala '$(DESTDIR)$(INCLUDEDIR)'/tree_sitter '$(DESTDIR)$(PCLIBDIR)' '$(DESTDIR)$(LIBDIR)'
@@ -113,4 +111,4 @@ clean:
 test:
 	$(TS) test
 
-.PHONY: all install uninstall clean test
+.PHONY: all install uninstall clean generate test

@@ -13,7 +13,7 @@ classifiers = [
   "Topic :: Text Processing :: Linguistic",
   "Typing :: Typed",
 ]
-authors = [{  }]
+authors = [{ name = "Princeton Ferro" }]
 requires-python = ">=3.10"
 license.text = "LGPL-2.1-only"
 readme = "README.md"

@@ -39,7 +39,7 @@
   "devDependencies": {
     "prebuildify": "^6.0.1",
     "tree-sitter": "^0.25.0",
-    "tree-sitter-cli": "^0.26.11"
+    "tree-sitter-cli": "0.24.7"
   },
   "peerDependencies": {
     "tree-sitter": "^0.25.0"
@@ -50,6 +50,7 @@
     }
   },
   "scripts": {
+    "generate": "tree-sitter generate --abi 13",
     "install": "node-gyp-build",
     "prestart": "tree-sitter build --wasm",
     "start": "tree-sitter playground",
