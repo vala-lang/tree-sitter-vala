@@ -1,0 +1,81 @@
+===================================
+Methods with multiple contracts
+===================================
+
+class Example {
+    public Example ()
+    requires (input != null)
+    requires (output != null)
+    ensures (input != null)
+    ensures (result != null) {
+    }
+
+    public void run ()
+    requires (input != null)
+    requires (output != null)
+    ensures (input != null)
+    ensures (result != null) {
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (class_declaration
+      (unqualified_type
+        (symbol
+          (identifier)))
+      (class_member
+        (creation_method_declaration
+          (access_modifier)
+          (symbol
+            (identifier))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (block)))
+      (class_member
+        (method_declaration
+          (access_modifier)
+          (type)
+          (symbol
+            (identifier))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (equality_expression
+            (member_access_expression
+              (identifier))
+            (literal
+              (null)))
+          (block))))))

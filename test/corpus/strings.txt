@@ -64,3 +64,38 @@ x = "location: C:\\Users";
    (literal
     (string
      (escape_sequence))))))
+
+
+===========================
+Consecutive verbatim strings
+===========================
+
+x = """one""";
+x = """two""";
+
+---
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      (member_access_expression (identifier))
+      (literal (verbatim_string))))
+  (expression_statement
+    (assignment_expression
+      (member_access_expression (identifier))
+      (literal (verbatim_string)))))
+
+
+==============================
+Comment text in verbatim strings
+==============================
+
+x = """//""";
+
+---
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      (member_access_expression (identifier))
+      (literal (verbatim_string)))))

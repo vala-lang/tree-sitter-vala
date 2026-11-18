@@ -71,3 +71,81 @@ void main() {
                     (identifier)))
                 (literal
                   (real))))))))
+
+
+==================
+Upstream expressions
+==================
+
+void f () {
+    (a, b) = c;
+    var (x, y) = z;
+    value = items?[0];
+    value = items[:];
+    value = +1;
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol (identifier))
+      (block
+        (expression_statement
+          (assignment_expression
+            (tuple_expression (member_access_expression (identifier)) (member_access_expression (identifier)))
+            (member_access_expression (identifier))))
+        (local_declaration
+          (type)
+          (tuple_expression (member_access_expression (identifier)) (member_access_expression (identifier)))
+          (member_access_expression (identifier)))
+        (expression_statement
+          (assignment_expression
+            (value_access)
+            (element_access_expression
+              (member_access_expression (identifier))
+              (element_access (literal (integer))))))
+        (expression_statement
+          (assignment_expression
+            (value_access)
+            (element_access_expression
+              (member_access_expression (identifier))
+              (element_access (slice_expression)))))
+        (expression_statement
+          (assignment_expression
+            (value_access)
+            (unary_plus_expression (literal (integer)))))))))
+
+
+==============================
+Value as a contextual identifier
+==============================
+
+void f () {
+    connect ((value) => value);
+    Object (value: value);
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol (identifier))
+      (block
+        (expression_statement
+          (method_call_expression
+            (member_access_expression (identifier))
+            (argument
+              (lambda_expression
+                (lambda_parameter (identifier))
+                (value_access)))))
+        (expression_statement
+          (method_call_expression
+            (member_access_expression (identifier))
+            (argument
+              (identifier)
+              (value_access))))))))

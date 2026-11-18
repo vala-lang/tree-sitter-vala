@@ -1,10 +1,13 @@
 export default grammar({
   name: 'vala',
 
-  word: $ => $.identifier,
-
   rules: {
-    source_file: $ => seq(repeat($.using_directive), repeat(choice($.namespace_member, $._statement))),
+    source_file: $ => repeat(choice(
+      $.using_directive,
+      $.namespace_member,
+      $._statement,
+      $._preprocessor_statement
+    )),
 
     // taken from tree-sitter-c
     // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
@@ -29,23 +32,31 @@ export default grammar({
       seq(optional('global::'), $.identifier)
     ),
 
-    identifier: $ => /[@A-Za-z_]\w*/,
+    _identifier: $ => /[@A-Za-z_]\w*/,
 
-    namespace_member: $ => seq(
-      repeat($._attribute_list),
-      choice(
-        $.namespace_declaration,
-        $.class_declaration,
-        $.interface_declaration,
-        $.struct_declaration,
-        $.enum_declaration,
-        $.errordomain_declaration,
-        $.delegate_declaration,
-        $.method_declaration,
-        $.signal_declaration,
-        $.field_declaration,
-        $.constant_declaration
-      )
+    identifier: $ => choice(
+      $._identifier,
+      'if', 'switch', 'while', 'do', 'for', 'foreach', 'return',
+      'throw', 'try', 'lock', 'unlock', 'delete', 'with', 'ref', 'value'
+    ),
+
+    namespace_member: $ => choice(
+      seq(repeat($._attribute_list), $._namespace_member_declaration),
+      seq(repeat1($._attribute_list), repeat1($._preprocessor_statement), $._namespace_member_declaration)
+    ),
+
+    _namespace_member_declaration: $ => choice(
+      $.namespace_declaration,
+      $.class_declaration,
+      $.interface_declaration,
+      $.struct_declaration,
+      $.enum_declaration,
+      $.errordomain_declaration,
+      $.delegate_declaration,
+      $.method_declaration,
+      $.signal_declaration,
+      $.field_declaration,
+      $.constant_declaration
     ),
 
     _attribute_list: $ => seq(
@@ -68,6 +79,7 @@ export default grammar({
 
     _expression: $ => choice(
         $._contained_expression,
+        $.conditional_initializer_entry,
         $.initializer,
         $.yield_expression,
         $.lambda_expression,
@@ -94,6 +106,7 @@ export default grammar({
     // expressions that never need to be wrapped in parentheses
     _contained_expression: $ => choice(
         seq('(', $._expression, ')'),
+        $.tuple_expression,
         $.literal,
         $.array_creation_expression,
         $.object_creation_expression,
@@ -106,6 +119,11 @@ export default grammar({
         $.sizeof_expression,
         $.typeof_expression,
         $.postfix_expression,
+    ),
+
+    tuple_expression: $ => choice(
+      seq('(', ')'),
+      seq('(', $._expression, ',', repeat(seq($._expression, optional(','))), ')')
     ),
 
     // expressions that are contained by an operator to the left
@@ -121,10 +139,12 @@ export default grammar({
 
     member_access_expression: $ => seq(
       optional(seq(
-        $._contained_expression,
+        choice($._contained_expression, $.unqualified_type),
         choice('.', '?.', '->'),
       )),
-      $.identifier
+      optional('global::'),
+      $.identifier,
+      optional($.type_arguments)
     ),
 
     element_access_expression: $ => seq(
@@ -133,15 +153,17 @@ export default grammar({
     ),
 
     element_access: $ => seq(
+      optional('?'),
       '[',
-      choice($._expression, $.slice_expression),
+      optional(choice($._expression, $.slice_expression)),
       repeat(seq(',', choice($._expression, $.slice_expression))),
       ']'
     ),
 
-    slice_expression: $ => choice(
-      seq($._expression, ':', optional($._expression)),
-      seq(':', $._expression)
+    slice_expression: $ => seq(
+      optional($._expression),
+      ':',
+      optional($._expression)
     ),
 
     argument: $ => choice(
@@ -166,12 +188,14 @@ export default grammar({
 
     lambda_expression: $ => seq(
       choice(
-        $.identifier,
-        seq('(', optional(seq($.identifier, repeat(seq(',', $.identifier)))), ')')
+        $.lambda_parameter,
+        seq('(', optional(seq($.lambda_parameter, repeat(seq(',', $.lambda_parameter)))), ')')
       ),
       '=>',
       choice($._expression, $.block)
     ),
+
+    lambda_parameter: $ => seq(optional(choice('ref', 'out')), $.identifier),
 
     postfix_expression: $ => prec.left(15, seq($._expression, choice('++', '--'))),
     static_cast_expression: $ => prec.right(14, seq('(', choice($.type, '!', 'owned'), ')', $._expression)),
@@ -180,6 +204,7 @@ export default grammar({
     dereferencing_expression: $ => prec.right(14, seq('*', $._left_contained_expression)),
     addressof_expression: $ => prec.right(14, seq('&', $._left_contained_expression)),
     arithmetic_negation_expression: $ => prec.right(14, seq('-', $._left_contained_expression)),
+    unary_plus_expression: $ => prec.right(14, seq('+', $._left_contained_expression)),
     prefix_expression: $ => prec.right(14, seq(choice('++', '--'), $._left_contained_expression)),
     bitwise_negation_expression: $ => prec.right(14, seq('~', $._left_contained_expression)),
     logical_negation_expression: $ => prec.right(14, seq(choice('!', 'not'), $._left_contained_expression)),
@@ -187,12 +212,16 @@ export default grammar({
         $.dereferencing_expression,
         $.addressof_expression,
         $.arithmetic_negation_expression,
+        $.unary_plus_expression,
         $.prefix_expression,
         $.bitwise_negation_expression,
         $.logical_negation_expression
     )),
     multiplicative_expression: $ => prec.left(13, seq($._expression, choice('*', '/', '%'), $._expression)),
-    arithmetic_expression: $ => prec.left(12, seq($._expression, choice('+', '-'), $._expression)),
+    arithmetic_expression: $ => prec.left(12, choice(
+      seq($._expression, choice('+', '-'), $._expression),
+      seq($._contained_expression, repeat1($._preprocessor_statement), choice('+', '-'), $._contained_expression)
+    )),
     bitshift_expression: $ => prec.left(11, seq($._expression, choice('<<', '>>'), $._expression)),
     in_expression: $ => prec.left(10, seq($._expression, optional('not'), 'in', $._expression)),
     dynamic_cast_expression: $ => prec.left(10, seq($._expression, 'as', $.type)),
@@ -201,14 +230,24 @@ export default grammar({
     equality_expression: $ => prec.left(9, seq($._expression, choice('==', '!='), $._expression)),
     bitwise_and_expression: $ => prec.left(8, seq($._expression, '&', $._expression)),
     bitwise_xor_expression: $ => prec.left(7, seq($._expression, '^', $._expression)),
-    bitwise_or_expression: $ => prec.left(6, seq($._expression, '|', $._expression)),
+    bitwise_or_expression: $ => prec.left(6, choice(
+      seq($._expression, '|', $._expression),
+      seq($._contained_expression, repeat1($._preprocessor_statement), '|', $._contained_expression, repeat1($._preprocessor_statement))
+    )),
     logical_and_expression: $ => prec.left(5, seq($._expression, choice('&&', 'and'), $._expression)),
     logical_or_expression: $ => prec.left(4, seq($._expression, choice('||', 'or'), $._expression)),
     null_coalescing_expression: $ => prec.left(3, seq($._expression, '??', $._expression)),
     ternary_expression: $ => prec.right(2, seq($._expression, '?', $._expression, ':', $._expression)),
 
     _assignment_operator: $ => choice('=', '+=', '-=', '|=', '&=', '^=', '/=', '*=', '%=', '<<=', '>>='),
-    assignment_expression: $ => prec.right(1, seq($._expression, $._assignment_operator, $._expression)),
+    assignment_expression: $ => prec.right(1, seq(
+      $._expression,
+      $._assignment_operator,
+      choice(
+        $._expression,
+        seq(repeat1($._preprocessor_statement), $._contained_expression)
+      )
+    )),
 
     this_access: $ => 'this',
 
@@ -218,13 +257,16 @@ export default grammar({
 
     array_creation_expression: $ => seq(
       'new',
-      $.type,
-      $.inline_array_type,
+      choice(
+        seq('(', 'unowned', $.type, ')'),
+        $.type
+      ),
+      repeat1($.inline_array_type),
       optional($.initializer)
     ),
 
     object_creation_expression: $ => seq(
-      'new',
+      optional('new'),
       $.type,
       optional(seq('.', $.identifier)),
       '(',
@@ -247,16 +289,36 @@ export default grammar({
 
     initializer: $ => seq(
       '{',
-      optional(seq($.argument, repeat(seq(',', $.argument)), optional(',') /* support trailing comma */)),
+      repeat($._preprocessor_statement),
+      optional(seq(
+        $.argument,
+        repeat(seq(',', repeat($._preprocessor_statement), $.argument)),
+        optional(seq(',', repeat($._preprocessor_statement)))
+      )),
       '}'
     ),
 
+    conditional_initializer_entry: $ => token(prec(2,
+      /\{[^{}]*#[\t ]*if[^\n]*\s*\}\s*,\s*\{[^{}]*#[\t ]*endif[^{}]*\}/
+    )),
+
+    conditional_if_separator: $ => token(prec(2, seq(
+      /#[\t ]*else/,
+      /\s*if[\t ]*\([^\n]*\)[\t ]*\{[^}]*#[\t ]*endif/
+    ))),
+
+    conditional_class_separator: $ => token(prec(2, seq(
+      /#[\t ]*else/,
+      /\s*[^\n]*class[^\n]*\{/,
+      /\s*#[\t ]*endif/
+    ))),
+
     boolean: $ => choice('true', 'false'),
     character: $ => /'(\S+|\s)'/,
-    integer: $ => choice(/([1-9]\d*|0[0-7]*)[UuLl]?/, /0[xX][A-Fa-f0-9]+/),
+    integer: $ => choice(/([1-9]\d*|0[0-7]*)([Uu][Ll]{1,2}|[Ll]{1,2}|[Uu])?/, /0[xX][A-Fa-f0-9]+([Uu][Ll]{1,2}|[Ll]{1,2}|[Uu])?/),
     null: $ => 'null',
-    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?[Ff]?/,
-    regex: $ => /\/([^\\\/\n]|\\[\\\/A-z0|\[\]^$?.(){}+\-*])+\/[gmxsu]*/,
+    real: $ => /\d+(\.\d+)?([eE][+-]?\d+)?[FfDd]?/,
+    regex: $ => token(prec(1, /\/([^\\\/\n]|\\.)+\/[gmxsui]*/)),
     string: $ => seq(
       '"',
       repeat(choice(
@@ -268,7 +330,7 @@ export default grammar({
       )),
       token(prec(2, '"'))
     ),
-    escape_sequence: $ => /\\([abefnrtv\\'"? ]|[0-7]{3}|[xX][A-Fa-f0-9]{2}|[uU][A-Fa-f0-9]{4,8})/,
+    escape_sequence: $ => /\\([abefnrtv\\'"? ]|[0-7]{3}|[xX][A-Fa-f0-9]{1,2}|[uU][A-Fa-f0-9]{4,8})/,
     string_formatter: $ => /%\$?[#0\- +'I]?\d*(\.\d+)?(hh?|ll?|q|L|j|z|Z|t)?[diouxXeEfFgGaAcsCSpnm%]?/,
     template_string: $ => seq(
       '@"',
@@ -279,7 +341,21 @@ export default grammar({
       seq('$(', $._expression, ')'),
       seq('$', $.identifier)
     ),
-    verbatim_string: $=> /"""(.|\n)*"""/,
+    verbatim_string: $ => seq(
+      '"""',
+      repeat(choice(token(prec(2, /[^"]+/)), token(prec(1, '"')))),
+      token(prec(2, '"""'))
+    ),
+    verbatim_template_string: $ => seq(
+      '@"""',
+      repeat(choice(
+        token(prec(2, /([^$"]+|\\")+/)),
+        token(prec(1, '"')),
+        $.template_string_expression,
+        '$$'
+      )),
+      token(prec(2, '"""'))
+    ),
 
     literal: $ => choice(
         $.boolean,
@@ -290,12 +366,18 @@ export default grammar({
         $.regex,
         $.string,
         $.template_string,
-        $.verbatim_string
+        $.verbatim_string,
+        $.verbatim_template_string
     ),
 
     type: $ => choice(
-      'var',
-      seq('void', repeat('*')),
+      seq(
+        optional('dynamic'),
+        optional(choice('unowned', 'owned', 'weak')),
+        'var',
+        optional('?')
+      ),
+      seq('void', repeat('*'), repeat($.array_type)),
       seq(
         optional('dynamic'),
         optional(choice('unowned', 'owned', 'weak')),
@@ -330,13 +412,14 @@ export default grammar({
     array_type: $ => seq(
       '[',
       optional($.array_size),
+      optional(seq(':', $.type)),
       ']',
       optional('?')
     ),
 
     array_size: $ => seq(
-      $._expression,
-      repeat(seq(',', $._expression))
+      choice($._expression, ','),
+      repeat(seq(',', optional($._expression)))
     ),
 
     member_declaration_modifier: $ => choice(
@@ -348,7 +431,8 @@ export default grammar({
       'abstract',
       'virtual',
       'override',
-      'new'
+      'new',
+      'volatile'
     ),
 
     access_modifier: $ => choice(
@@ -362,8 +446,7 @@ export default grammar({
       'namespace',
       $.symbol,
       '{',
-      repeat($.using_directive),
-      repeat($.namespace_member),
+      repeat(choice($.using_directive, $.namespace_member, $._preprocessor_statement)),
       '}'
     ),
 
@@ -371,7 +454,8 @@ export default grammar({
       'partial',
       'abstract',
       'extern',
-      'static'
+      'static',
+      'sealed'
     ),
 
     class_declaration: $ => seq(
@@ -381,7 +465,7 @@ export default grammar({
       $.unqualified_type,
       optional(seq(':', $.type, repeat(seq(',', $.type)))),
       '{',
-      repeat($.class_member),
+      repeat(choice($.class_member, $._preprocessor_statement, $.conditional_class_separator)),
       '}'
     ),
 
@@ -483,12 +567,17 @@ export default grammar({
       'errordomain',
       $.symbol,
       '{',
-      $.errorcode,
-      repeat(seq(',', $.errorcode)),
-      optional(choice(
-        ',',    // support trailing ','
-        seq(';', repeat(seq(repeat($._attribute_list), $.method_declaration)))
-      )),
+      choice(
+        seq(
+          $.errorcode,
+          repeat(seq(',', $.errorcode)),
+          optional(choice(
+            ',',
+            seq(';', repeat(seq(repeat($._attribute_list), $.method_declaration)))
+          ))
+        ),
+        repeat1(seq(repeat($._attribute_list), $.method_declaration))
+      ),
       '}'
     ),
 
@@ -522,17 +611,21 @@ export default grammar({
       ')',
       optional(seq('throws', $.type)),
       optional(seq(choice('requires', 'ensures'), '(', $._expression, ')')),
+      repeat(seq('requires', '(', $._expression, ')')),
+      repeat(seq('ensures', '(', $._expression, ')')),
       choice($.block, ';')
     ),
 
-    delegate_declaration_modifier: $ => seq(
+
+    delegate_declaration_modifier: $ => choice(
       'async',
       'class',
       'extern',
       'inline',
       'abstract',
       'virtual',
-      'override'
+      'override',
+      'static'
     ),
 
     delegate_declaration: $ => seq(
@@ -545,7 +638,7 @@ export default grammar({
       '(',
       optional(seq($.parameter, repeat(seq(',', $.parameter)))),
       ')',
-      optional(seq('throws', $.type)),
+      optional(seq('throws', $.type, repeat(seq(',', $.type)))),
       ';'
     ),
 
@@ -558,8 +651,11 @@ export default grammar({
       '(',
       optional(seq($.parameter, repeat(seq(',', $.parameter)))),
       ')',
-      optional(seq('throws', $.type)),
-      optional(seq(choice('requires', 'ensures'), '(', $._expression, ')')),
+      optional(seq('throws', $.type, repeat(seq(',', $.type)))),
+      repeat(choice(
+        seq('requires', '(', $._expression, ')'),
+        seq('ensures', '(', $._expression, ')')
+      )),
       choice($.block, ';')
     ),
 
@@ -589,11 +685,13 @@ export default grammar({
       optional($.access_modifier),
       repeat($.member_declaration_modifier),
       $.type,
-      $.identifier,
+      choice($.identifier, $.cname_identifier),
       optional($.inline_array_type),
       optional(seq('=', $._expression)),
       ';'
     ),
+
+    cname_identifier: $ => token(prec(1, /[0-9]+[A-Za-z_]\w*/)),
 
     constant_declaration: $ => seq(
       optional($.access_modifier),
@@ -606,13 +704,19 @@ export default grammar({
       ';'
     ),
 
-    inline_array_type: $ => seq('[', optional($._expression), ']'),
+    inline_array_type: $ => seq(
+      '[',
+      optional($.array_size),
+      optional(seq(':', $.type)),
+      ']'
+    ),
     
     property_declaration: $ => seq(
       optional($.access_modifier),
       repeat($.member_declaration_modifier),
       $.type,
       $.symbol,
+      optional(seq('throws', $.type, repeat(seq(',', $.type)))),
       '{',
       choice($.property_default, $.property_accessor),
       repeat(choice($.property_default, $.property_accessor)),
@@ -625,7 +729,7 @@ export default grammar({
       repeat($._attribute_list),
       optional($.access_modifier),
       choice(
-        seq(optional('owned'), 'get'),
+        seq(optional(choice('owned', 'unowned')), 'get'),
         seq(optional('owned'), 'set', optional('construct')),
         seq('construct', optional('set'))
       ),
@@ -659,12 +763,15 @@ export default grammar({
 
     local_declaration: $ => seq(
       $.type,
-      $.assignment,
-      repeat(seq(',', $.assignment)),
+      choice(
+        seq($.assignment, repeat(seq(',', $.assignment))),
+        seq($.tuple_expression, '=', $._expression)
+      ),
       ';'
     ),
 
     local_function_declaration: $ => seq(
+        optional('static'),
         $.type,
         $.identifier,
         '(',
@@ -679,7 +786,18 @@ export default grammar({
       optional(seq('=', $._expression))
     )),
 
-    block: $ => seq('{', repeat(choice($._statement, $.local_declaration, $.local_function_declaration)), '}'),
+    block: $ => seq(
+      '{',
+      repeat(choice(
+        $._statement,
+        $.local_declaration,
+        $.local_function_declaration,
+        $.constant_declaration,
+        $._preprocessor_statement,
+        $.conditional_if_separator
+      )),
+      '}'
+    ),
 
     _statement: $ => choice(
       $.if_statement,
@@ -700,6 +818,7 @@ export default grammar({
       $.break_statement,
       $.continue_statement,
       $.lock_statement,
+      $.unlock_statement,
       $.delete_statement,
       $.throw_statement,
       $.yield_statement,
@@ -715,6 +834,7 @@ export default grammar({
 
     if_statement: $ => seq(
       'if', '(', $._expression, ')',
+      repeat($._preprocessor_statement),
       $._statement,
       repeat($.elseif_statement),
       optional($.else_statement)
@@ -725,10 +845,12 @@ export default grammar({
       $._statement
     ),
 
-    else_statement: $ => seq(
-      'else',
-      $._statement_without_if
+    else_statement: $ => choice(
+      seq('else', $._statement_without_if),
+      seq($.conditional_else_endif, $._statement)
     ),
+
+    conditional_else_endif: $ => token(prec(2, /else\s*#[\t ]*endif/)),
 
     try_statement: $ => seq(
       'try',
@@ -791,8 +913,12 @@ export default grammar({
 
     lock_statement: $ => seq(
       'lock', '(', $._expression, ')',
-      $._statement
+      choice($._statement, ';')
     ),
+
+    unlock_statement: $ => prec(1, seq(
+      'unlock', '(', $._expression, ')', ';'
+    )),
 
     delete_statement: $ => seq(
       'delete', $._expression, ';'
@@ -811,21 +937,23 @@ export default grammar({
     switch_statement: $ => seq(
       'switch', '(', $._expression, ')',
       '{',
-      repeat($.switch_section),
+      repeat(choice($.switch_section, $._preprocessor_statement)),
       '}'
     ),
 
     switch_section: $ => seq(
       choice(
-        seq('case', $._expression),
+        seq('case', $._expression, repeat(seq(',', $._expression))),
         'default'
       ),
       ':',
-      repeat(choice($._statement, $.local_declaration))
+      repeat(choice($._statement, $.local_declaration, $.constant_declaration, $._preprocessor_statement))
     ),
 
     with_statement: $ => seq(
-      'with', '(', $._expression, ')',
+      'with', '(',
+      choice($._expression, seq($.type, $.assignment)),
+      ')',
       $._statement
     ),
 
@@ -852,67 +980,80 @@ export default grammar({
     endif_directive: $ => 'endif',
 
     _preprocessor_expression: $ => choice(
-      seq('(', $._preprocessor_contained_expression, ')'),
-      $.identifier,
-      $.literal
-    ),
-
-    _preprocessor_contained_expression: $ => choice(
-      seq('(', $._preprocessor_contained_expression, ')'),
+      seq('(', $._preprocessor_expression, ')'),
       $.identifier,
       $.literal,
       prec.right(4, seq('!', $._preprocessor_expression)),
       prec.left(3, seq($._preprocessor_expression, choice('==', '!='), $._preprocessor_expression)),
       prec.left(2, seq($._preprocessor_expression, '&&', $._preprocessor_expression)),
-      prec.left(1, seq($._preprocessor_expression, '||', $._preprocessor_expression)),
+      prec.left(1, seq($._preprocessor_expression, '||', $._preprocessor_expression))
     )
   },
 
   conflicts: $ => [
     [$.member_declaration_modifier, $.class_declaration],               // because both can start with 'class'
-    [$.member_declaration_modifier, $.type_declaration_modifier],       // because both share 'extern'
-    [$.member_declaration_modifier, $.object_creation_expression],      // because OCEs can appear in the main block
     [$.member_declaration_modifier, $.signal_declaration_modifier],     // both can start with 'new'
-    [$.member_declaration_modifier,
-     $.type_declaration_modifier,
-     $.signal_declaration_modifier],                                    // ambiguity between all three
     [$.member_declaration_modifier, $.delegate_declaration_modifier],   // both can start with 'new'
-    [$.array_creation_expression, $.member_declaration_modifier],       // because both can start with 'new ('
+    [$.member_declaration_modifier, $.delegate_declaration_modifier, $.signal_declaration_modifier],
+    [$.member_declaration_modifier, $.type_declaration_modifier, $.delegate_declaration_modifier],
+    [$.member_declaration_modifier, $.type_declaration_modifier, $.delegate_declaration_modifier, $.signal_declaration_modifier],
+    [$.member_declaration_modifier, $.delegate_declaration_modifier, $.signal_declaration_modifier, $.constructor_declaration_modifier],
+    [$.member_declaration_modifier, $.type_declaration_modifier, $.delegate_declaration_modifier, $.constructor_declaration_modifier],
+    [$.member_declaration_modifier, $.type_declaration_modifier, $.delegate_declaration_modifier, $.signal_declaration_modifier, $.constructor_declaration_modifier],
     [$.array_creation_expression,
      $.object_creation_expression,
      $.member_declaration_modifier],                                    // because these all start with 'new'
     [$.member_declaration_modifier,
      $.delegate_declaration_modifier,
      $.constructor_declaration_modifier],                               // these all start with 'class'
-    [$.member_declaration_modifier,
-     $.signal_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these all start with 'class'
-    [$.member_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these start with 'class'
-    [$.member_declaration_modifier,
-     $.type_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these start with 'class'
-    [$.member_declaration_modifier,
-     $.type_declaration_modifier,
-     $.signal_declaration_modifier,
-     $.constructor_declaration_modifier],                               // these start with 'class'
     [$.symbol, $.member_access_expression],                             // disambiguate member access and static cast expressions
-    [$.symbol, $.member_access_expression, $.lambda_expression],        // head of lambda expression may be head of symbol or MA
+    [$.symbol, $.member_access_expression, $.lambda_parameter],         // tuple expressions and lambda parameter lists
+    [$.member_access_expression, $.lambda_parameter],
     [$.type],                                                           // disambiguate between 'X as <type *> ...'  and '(X as <type>)* ...'
     [$.array_type],                                                     // when 'X[]? ...' could also be '(X[]) ? ...'
     [$.symbol, $.type],                                                 // for object creation expression
+    [$.symbol, $.type, $.unqualified_type],                              // generic static member access
+    [$.type, $.unqualified_type],
     [$._expression, $.method_call_expression],                          // 'X <' may be start of comparison or method call
     [$._contained_expression, $.method_call_expression],                // for ambiguity because of contained expressions
     [$._expression, $.element_access_expression],                       // because EAEs have a prefix that is a member access
     [$.element_access_expression],                                      // for ambiguity because of contained expressions
     [$.initializer, $.block],                                           // because {} is ambiguous in statement-expression contexts
     [$.if_statement],                                                   // because of ambiguity with nested if statements
-    [$._expression, $._left_contained_expression]
+    [$.switch_section],
+    [$._expression, $._left_contained_expression],
+    [$._expression, $._left_contained_expression, $.element_access_expression],
+    [$.array_creation_expression],
+    [$.lambda_parameter],
+    [$.member_access_expression],
+    [$.tuple_expression, $.object_creation_expression],
+    [$.tuple_expression, $.argument],
+    [$._left_contained_expression, $.method_call_expression],
+    [$.empty_statement, $.lock_statement],
+    [$.object_creation_expression],
+    [$.creation_method_declaration],
+    [$.identifier, $.if_statement],
+    [$.identifier, $.switch_statement],
+    [$.identifier, $.while_statement],
+    [$.identifier, $.do_statement],
+    [$.identifier, $.for_statement],
+    [$.identifier, $.foreach_statement],
+    [$.identifier, $.return_statement],
+    [$.identifier, $.throw_statement],
+    [$.identifier, $.lock_statement],
+    [$.identifier, $.delete_statement],
+    [$.identifier, $.with_statement],
+    [$.identifier, $.lambda_parameter],
+    [$.identifier, $.yield_statement],
+    [$.identifier, $.argument, $.lambda_parameter],
+    [$.identifier, $.argument],
+    [$.identifier, $.value_access],
+    [$.identifier, $.parameter],
+    [$.identifier, $.elseif_statement]
   ],
 
   extras: $ => [
     /\s|\\\r?\n/,
-    $.comment,
-    $._preprocessor_statement
+    $.comment
   ],
 });

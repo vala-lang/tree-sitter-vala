@@ -16,7 +16,7 @@
 (errorcode (identifier) @constant)
 (constant_declaration (identifier) @constant)
 (method_call_expression (member_access_expression (identifier) @function))
-(lambda_expression (identifier) @variable.parameter)
+(lambda_parameter (identifier) @variable.parameter)
 (parameter (identifier) @variable.parameter)
 (property_declaration (symbol (identifier) @property))
 [
@@ -37,11 +37,29 @@
 ] @string.special
 (template_string) @string
 (template_string_expression) @string.special
-(verbatim_string) @string
+[
+ (verbatim_string)
+ (verbatim_template_string)
+] @string
 [
  "var"
  "void"
 ] @type.builtin
+
+(if_directive
+  expression: (_) @preproc
+) @keyword
+(elif_directive
+  expression: (_) @preproc
+) @keyword
+(else_directive) @keyword
+(endif_directive) @keyword
+[
+  (conditional_initializer_entry)
+  (conditional_if_separator)
+  (conditional_class_separator)
+  (conditional_else_endif)
+] @keyword
 
 [
  "abstract"
@@ -61,6 +79,7 @@
  "do"
  "dynamic"
  "else"
+ "ensures"
  "enum"
  "errordomain"
  "extern"
@@ -87,6 +106,7 @@
  "protected"
  "public"
  "ref"
+ "requires"
  "return"
  "set"
  "signal"
@@ -105,6 +125,11 @@
  "while"
  "with"
  "yield"
+ "ensures"
+ "requires"
+ "sealed"
+ "unlock"
+ "volatile"
 ] @keyword
 
 [
@@ -160,3 +185,6 @@
  "["
  "]"
 ] @punctuation.bracket
+
+(template_string_expression
+ ["$(" ")"] @string.special)
