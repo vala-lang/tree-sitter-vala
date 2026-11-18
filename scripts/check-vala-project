@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <project-directory>" >&2
+  exit 2
+fi
+
+if ! command -v tree-sitter >/dev/null 2>&1; then
+  echo "error: tree-sitter CLI is not installed" >&2
+  exit 1
+fi
+
+project_dir=${1%/}
+
+if [[ ! -d $project_dir ]]; then
+  echo "error: project directory not found: $project_dir" >&2
+  exit 1
+fi
+
+shopt -s globstar nullglob
+files=("$project_dir"/**/*.vala)
+
+if [[ ${#files[@]} -eq 0 ]]; then
+  echo "error: no .vala files found in $project_dir" >&2
+  exit 1
+fi
+
+printf 'Parsing %d Vala files from %s\n' "${#files[@]}" "$project_dir"
+tree-sitter parse --quiet "${files[@]}"
+printf 'All %d Vala files parsed successfully.\n' "${#files[@]}"

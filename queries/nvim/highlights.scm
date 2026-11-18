@@ -53,10 +53,11 @@
  (method_call_expression (member_access_expression (identifier) @function.macro))
  (#match? @function.macro "^(assert[A-Za-z_0-9]*|error|info|debug|print|warning|warning_once)$")
 )
-(lambda_expression (identifier) @parameter)
+(lambda_parameter (identifier) @parameter)
 (parameter (identifier) @parameter)
 (property_declaration (symbol (identifier) @property))
 (field_declaration (identifier) @field)
+(field_declaration (cname_identifier) @field)
 [
  (this_access)
  (base_access)
@@ -73,7 +74,10 @@
 (string_formatter) @string.special
 (template_string) @string
 (template_string_expression) @string.special
-(verbatim_string) @string
+[
+ (verbatim_string)
+ (verbatim_template_string)
+] @string
 [
  "var"
  "void"
@@ -87,6 +91,12 @@
 ) @keyword
 (else_directive) @keyword
 (endif_directive) @keyword
+[
+  (conditional_initializer_entry)
+  (conditional_if_separator)
+  (conditional_class_separator)
+  (conditional_else_endif)
+] @keyword
 
 [
  "abstract"
@@ -99,6 +109,7 @@
  "continue"
  "default"
  "delegate"
+ "ensures"
  "enum"
  "errordomain"
  "finally"
@@ -111,6 +122,7 @@
  "override"
  "partial"
  "ref"
+ "requires"
  "set"
  "signal"
  "struct"
@@ -120,6 +132,11 @@
  "try"
  "virtual"
  "with"
+ "ensures"
+ "requires"
+ "sealed"
+ "unlock"
+ "volatile"
 ] @keyword
 
 [
@@ -244,3 +261,6 @@
  "["
  "]"
 ] @punctuation.bracket
+
+(template_string_expression
+ ["$(" ")"] @string.special)

@@ -1,0 +1,88 @@
+==================
+Upstream declarations
+==================
+
+sealed class Foo {
+    volatile int field;
+    void bar () throws Error, IOError
+        requires (field > 0)
+        requires (field < 10)
+        ensures (result == 0) {
+        const int answer = 42;
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (class_declaration
+      (type_declaration_modifier)
+      (unqualified_type (symbol (identifier)))
+      (class_member
+        (field_declaration
+          (member_declaration_modifier)
+          (type (symbol (identifier)))
+          (identifier)))
+      (class_member
+        (method_declaration
+          (type)
+          (symbol (identifier))
+          (type (symbol (identifier)))
+          (type (symbol (identifier)))
+          (relational_expression (member_access_expression (identifier)) (literal (integer)))
+          (relational_expression (member_access_expression (identifier)) (literal (integer)))
+          (equality_expression (member_access_expression (identifier)) (literal (integer)))
+          (block
+            (constant_declaration
+              (type (symbol (identifier)))
+              (identifier)
+              (literal (integer)))))))))
+
+
+=================================
+Preprocessor between class members
+=================================
+
+class Foo {
+#if DEBUG
+    void debug () {
+    }
+#endif
+}
+
+---
+
+(source_file
+  (namespace_member
+    (class_declaration
+      (unqualified_type (symbol (identifier)))
+      (if_directive (identifier))
+      (class_member
+        (method_declaration
+          (type)
+          (symbol (identifier))
+          (block)))
+      (endif_directive))))
+
+==========================
+Method-only error domains
+==========================
+
+errordomain Foo {
+    public static void bar () {
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (errordomain_declaration
+      (symbol (identifier))
+      (method_declaration
+        (access_modifier)
+        (member_declaration_modifier)
+        (type)
+        (symbol (identifier))
+        (block)))))

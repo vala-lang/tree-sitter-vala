@@ -1,0 +1,36 @@
+================
+Upstream statements
+================
+
+void f () {
+    unlock (mutex);
+    with (var resource = acquire ()) {
+    }
+    switch (value) {
+    case 0, 1, 2:
+        break;
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol (identifier))
+      (block
+        (unlock_statement (member_access_expression (identifier)))
+        (with_statement
+          (type)
+          (assignment
+            (identifier)
+            (method_call_expression (member_access_expression (identifier))))
+          (block))
+        (switch_statement
+          (value_access)
+          (switch_section
+            (literal (integer))
+            (literal (integer))
+            (literal (integer))
+            (break_statement)))))))

@@ -11,35 +11,478 @@ int x = 2;
 #endif
 
 ---
+
 (source_file
- (if_directive
-  (identifier)
-  (identifier))
- (namespace_member
-  (field_declaration
-   (type
-    (symbol
-     (identifier)))
-   (identifier)
-   (literal
-    (integer))))
- (elif_directive
-  (identifier))
- (namespace_member
-  (field_declaration
-   (type
-    (symbol
-     (identifier)))
-   (identifier)
-   (literal
-    (integer))))
- (else_directive)
- (namespace_member
-  (field_declaration
-   (type
-    (symbol
-     (identifier)))
-   (identifier)
-   (literal
-    (integer))))
-(endif_directive))
+  (if_directive
+    (identifier)
+    (identifier))
+  (namespace_member
+    (field_declaration
+      (type
+        (symbol
+          (identifier)))
+      (identifier)
+      (literal
+        (integer))))
+  (elif_directive
+    (identifier))
+  (namespace_member
+    (field_declaration
+      (type
+        (symbol
+          (identifier)))
+      (identifier)
+      (literal
+        (integer))))
+  (else_directive)
+  (namespace_member
+    (field_declaration
+      (type
+        (symbol
+          (identifier)))
+      (identifier)
+      (literal
+        (integer))))
+  (endif_directive))
+
+=========================================
+Preprocessor branches after an attribute
+=========================================
+
+[A]
+#if X
+class C {}
+#else
+class D {}
+#endif
+
+---
+
+(source_file
+  (namespace_member
+    (attribute
+      (identifier))
+    (if_directive
+      (identifier))
+    (class_declaration
+      (unqualified_type
+        (symbol
+          (identifier)))))
+  (else_directive)
+  (namespace_member
+    (class_declaration
+      (unqualified_type
+        (symbol
+          (identifier)))))
+  (endif_directive))
+
+==================================
+Preprocessor branches in initializer
+==================================
+
+const int[] values = {
+    1,
+#if X
+    2,
+#else
+    3,
+#endif
+    4
+};
+
+---
+
+(source_file
+  (namespace_member
+    (constant_declaration
+      (type
+        (symbol
+          (identifier))
+        (array_type))
+      (identifier)
+      (initializer
+        (argument
+          (literal
+            (integer)))
+        (if_directive
+          (identifier))
+        (argument
+          (literal
+            (integer)))
+        (else_directive)
+        (argument
+          (literal
+            (integer)))
+        (endif_directive)
+        (argument
+          (literal
+            (integer)))))))
+
+==============================================
+Preprocessor branches in switch case selection
+==============================================
+
+void f () {
+    switch (x) {
+#if X
+        case 1:
+#else
+        case 2:
+#endif
+            break;
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol
+        (identifier))
+      (block
+        (switch_statement
+          (member_access_expression
+            (identifier))
+          (if_directive
+            (identifier))
+          (switch_section
+            (literal
+              (integer))
+            (else_directive))
+          (switch_section
+            (literal
+              (integer))
+            (endif_directive)
+            (break_statement)))))))
+
+===========================================
+Preprocessor branches inside an expression
+===========================================
+
+void f () {
+    x = y
+#if X
+        + a;
+#else
+        + b;
+#endif
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol
+        (identifier))
+      (block
+        (expression_statement
+          (assignment_expression
+            (member_access_expression
+              (identifier))
+            (arithmetic_expression
+              (member_access_expression
+                (identifier))
+              (if_directive
+                (identifier))
+              (member_access_expression
+                (identifier)))))
+        (else_directive)
+        (expression_statement
+          (unary_plus_expression
+            (member_access_expression
+              (identifier))))
+        (endif_directive)))))
+
+=================================================
+Preprocessor branches splitting initializer entries
+=================================================
+
+const E[] entries = {
+    { "a", null
+#if X
+        }, { "b", null
+#endif
+    },
+    { null }
+};
+
+---
+
+(source_file
+  (namespace_member
+    (constant_declaration
+      (type
+        (symbol
+          (identifier))
+        (array_type))
+      (identifier)
+      (initializer
+        (argument
+          (conditional_initializer_entry))
+        (argument
+          (initializer
+            (argument
+              (literal
+                (null)))))))))
+
+===============================================
+Preprocessor alternatives sharing a class body
+===============================================
+
+[A]
+#if X
+class C : B {
+#else
+class C : D {
+#endif
+    int x;
+}
+
+---
+
+(source_file
+  (namespace_member
+    (attribute
+      (identifier))
+    (if_directive
+      (identifier))
+    (class_declaration
+      (unqualified_type
+        (symbol
+          (identifier)))
+      (type
+        (symbol
+          (identifier)))
+      (conditional_class_separator)
+      (class_member
+        (field_declaration
+          (type
+            (symbol
+              (identifier)))
+          (identifier))))))
+
+===============================================
+Preprocessor alternatives sharing an if body
+===============================================
+
+void f () {
+    foreach (string tag in tags) {
+#if X
+        if (a (tag)) {
+            string? alt = b (tag);
+#else
+        if (c (tag)) {
+            string? alt = d (tag);
+#endif
+            if (alt != null) {
+                break;
+            }
+        }
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol
+        (identifier))
+      (block
+        (foreach_statement
+          (type
+            (symbol
+              (identifier)))
+          (identifier)
+          (member_access_expression
+            (identifier))
+          (block
+            (if_directive
+              (identifier))
+            (if_statement
+              (method_call_expression
+                (member_access_expression
+                  (identifier))
+                (argument
+                  (member_access_expression
+                    (identifier))))
+              (block
+                (local_declaration
+                  (type
+                    (symbol
+                      (identifier)))
+                  (assignment
+                    (identifier)
+                    (method_call_expression
+                      (member_access_expression
+                        (identifier))
+                      (argument
+                        (member_access_expression
+                          (identifier))))))
+                (conditional_if_separator)
+                (if_statement
+                  (equality_expression
+                    (member_access_expression
+                      (identifier))
+                    (literal
+                      (null)))
+                  (block
+                    (break_statement)))))))))))
+
+====================================================
+Preprocessor between an if condition and its body
+====================================================
+
+void f () {
+#if X
+    if (a)
+#else
+    if (b)
+#endif
+        c();
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol
+        (identifier))
+      (block
+        (if_directive
+          (identifier))
+        (if_statement
+          (member_access_expression
+            (identifier))
+          (else_directive)
+          (if_statement
+            (member_access_expression
+              (identifier))
+            (endif_directive)
+            (expression_statement
+              (method_call_expression
+                (member_access_expression
+                  (identifier))))))))))
+
+==================================================
+Preprocessor alternatives with a trailing else
+==================================================
+
+void f () {
+    if (a) {
+        x = 1;
+    } else {
+#if X
+        if (b) {
+            x = 2;
+#else
+        if (c) {
+            x = 3;
+#endif
+            x = 4;
+        } else {
+            x = 5;
+        }
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol
+        (identifier))
+      (block
+        (if_statement
+          (member_access_expression
+            (identifier))
+          (block
+            (expression_statement
+              (assignment_expression
+                (member_access_expression
+                  (identifier))
+                (literal
+                  (integer)))))
+          (else_statement
+            (block
+              (if_directive
+                (identifier))
+              (if_statement
+                (member_access_expression
+                  (identifier))
+                (block
+                  (expression_statement
+                    (assignment_expression
+                      (member_access_expression
+                        (identifier))
+                      (literal
+                        (integer))))
+                  (conditional_if_separator)
+                  (expression_statement
+                    (assignment_expression
+                      (member_access_expression
+                        (identifier))
+                      (literal
+                        (integer)))))
+                (else_statement
+                  (block
+                    (expression_statement
+                      (assignment_expression
+                        (member_access_expression
+                          (identifier))
+                        (literal
+                          (integer))))))))))))))
+
+==========================================
+Nested if after a conditional else branch
+==========================================
+
+void f () {
+#if X
+    if (a) {
+        b();
+    } else
+#endif
+    if (e) {
+        f();
+    }
+}
+
+---
+
+(source_file
+  (namespace_member
+    (method_declaration
+      (type)
+      (symbol
+        (identifier))
+      (block
+        (if_directive
+          (identifier))
+        (if_statement
+          (member_access_expression
+            (identifier))
+          (block
+            (expression_statement
+              (method_call_expression
+                (member_access_expression
+                  (identifier)))))
+          (else_statement
+            (conditional_else_endif)
+            (if_statement
+              (member_access_expression
+                (identifier))
+              (block
+                (expression_statement
+                  (method_call_expression
+                    (member_access_expression
+                      (identifier))))))))))))
