@@ -1,0 +1,37 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "vala",
+      "camelcase": "Vala",
+      "scope": "source.vala",
+      "path": ".",
+      "file-types": [
+        "vala",
+        "vapi"
+      ],
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm",
+      "injection-regex": "^vala$",
+      "first-line-regex": "#!.*\\bvala$"
+    }
+  ],
+  "metadata": {
+    "version": "0.53.1",
+    "license": "LGPL-2.1-only",
+    "description": "Vala grammar for tree-sitter",
+    "links": {
+      "repository": "https://github.com/vala-lang/tree-sitter-vala"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "java": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true,
+    "zig": true
+  }
+}
