@@ -15,7 +15,7 @@
         "bindings/zig",
         "src",
         "queries",
-        "LICENSE",
+        "COPYING",
         "README.md",
     },
 }
